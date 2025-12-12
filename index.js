@@ -6,7 +6,7 @@ const { loadDB, saveDB } = require('./utils/db');
 
 let config = {};
 try {
-  const configPath = path.join(__dirname, 'config', 'config.json');
+  const configPath = path.join(__dirname, 'config', 'config.js');
   if (fs.existsSync(configPath)) {
     config = require(configPath);
     console.log('✅ Config loaded from config/config.json');
