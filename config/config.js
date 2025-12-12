@@ -13,7 +13,7 @@ module.exports = {
   },
 
   REQUIRED_CHATS: [
-    { id: "@BADOLBOTGC", name: "🔥𝐁𝐀𝐃𝐎𝐋-𝐁𝐎𝐓-𝐆𝐂🔥" },
-    { id: "@mreditorzone", name: "🔥𝐌𝐁-𝐄𝐃𝐈𝐓𝐎𝐑-𝐆𝐂🔥" }
+    { id: "-1002710357307", name: "𝐋𝐈𝐊𝐇𝐎𝐍 𝐗 𝐁𝐎𝐎𝐌𝐒 𝐀𝐏𝐊 💀" },
+    { id: "-1003319296127", name: "✨⟦ 𝐗𝟐𝟎 - 𝐔𝐏𝐃𝐀𝐓𝐄𝐒 ⟧✨" }
   ]
 };
