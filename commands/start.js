@@ -2,7 +2,7 @@ module.exports = {
   config: {
     name: "start",
     aliases: [],
-    description: "Force join REQUIRED_CHATS with inline verification",
+    description: "Force join REQUIRED_CHATS with inline verification button",
     prefix: true,
     permission: 0,
     tags: ["core"]
@@ -16,6 +16,7 @@ module.exports = {
     let missingChats = [];
     const inlineButtons = [];
 
+    // Prepare inline buttons for each chat (✅ / ❌)
     for (const chat of requiredChats) {
       try {
         const member = await bot.getChatMember(chat.id, userId);
@@ -40,32 +41,59 @@ module.exports = {
       }
     }
 
+    // Add VERIFY button at the bottom
+    inlineButtons.push([{
+      text: "✅ VERIFY",
+      callback_data: `verify_user`
+    }]);
+
+    let messageText = "";
     if (missingChats.length === 0) {
-      // All joined → allow bot usage
-      bot.sendMessage(chatId, "🎉 আপনি সব REQUIRED_CHATS এ join করেছেন। এখন bot ব্যবহার করতে পারবেন।", {
-        reply_markup: {
-          inline_keyboard: inlineButtons
-        }
-      });
-      // Mark user as verified globally
+      messageText = "🎉 আপনি সব REQUIRED_CHATS এ join করেছেন। এখন bot ব্যবহার করতে পারবেন।";
       if(!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
-      return;
+    } else {
+      messageText = "⚠️ আপনাকে নিম্নলিখিত গ্রুপ/চ্যানেলে join হতে হবে:\n\n";
+      messageText += "✅ = Already Joined\n❌ = Not Joined\n\n";
+      messageText += "Join করার পরে VERIFY button টিপুন।";
+      if(!global.verifiedUsers) global.verifiedUsers = {};
+      global.verifiedUsers[userId] = false;
     }
 
-    // Some missing → block commands
-    if(!global.verifiedUsers) global.verifiedUsers = {};
-    global.verifiedUsers[userId] = false;
-
-    let messageText = "⚠️ আপনাকে নিম্নলিখিত গ্রুপ/চ্যানেলে join হতে হবে:\n\n";
-    messageText += "✅ = Already Joined\n❌ = Not Joined\n\n";
-    messageText += "Join করার পরে /start আবার দিন।";
-
     bot.sendMessage(chatId, messageText, {
-      reply_markup: {
-        inline_keyboard: inlineButtons
-      },
+      reply_markup: { inline_keyboard: inlineButtons },
       parse_mode: "Markdown"
     });
   }
+};
+
+// Callback query listener (verify button)
+module.exports.initCallback = (bot) => {
+  bot.on("callback_query", async (query) => {
+    const userId = query.from.id;
+    const chatId = query.message.chat.id;
+
+    if (query.data === "verify_user") {
+      const requiredChats = global.CONFIG.REQUIRED_CHATS;
+      let missingChats = [];
+
+      for (const chat of requiredChats) {
+        try {
+          const member = await bot.getChatMember(chat.id, userId);
+          if (member.status === "left" || member.status === "kicked") {
+            missingChats.push(chat);
+          }
+        } catch (err) {
+          missingChats.push(chat);
+        }
+      }
+
+      if (missingChats.length === 0) {
+        global.verifiedUsers[userId] = true;
+        return bot.answerCallbackQuery(query.id, { text: "✅ Verification successful!", show_alert: true });
+      } else {
+        return bot.answerCallbackQuery(query.id, { text: "❌ এখনও কিছু গ্রুপে join হয়নি।", show_alert: true });
+      }
+    }
+  });
 };
