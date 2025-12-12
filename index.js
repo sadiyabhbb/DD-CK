@@ -2,11 +2,11 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-// const { loadDB, saveDB } = require('./utils/db'); // ❌ এই লাইনটি বাদ দেওয়া হলো
 
+// Configuration Loading
 let config = {};
 try {
-  const configPath = path.join(__dirname, 'config', 'config.js'); // module.exports
+  const configPath = path.join(__dirname, 'config', 'config.js');
   if (fs.existsSync(configPath)) {
     config = require(configPath);
     console.log('✅ Config loaded from config/config.js');
@@ -18,8 +18,8 @@ try {
   process.exit(1);
 }
 
+// Global Variables Setup
 const app = express();
-// ✅ পোর্ট সেটআপ (EADDRINUSE ত্রুটি এড়ানোর জন্য)
 const port = process.env.PORT || config.PORT || 8080; 
 
 global.botStartTime = Date.now();
@@ -27,19 +27,12 @@ global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
 global.loadedCommands = [];
-global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড ইউজার্স ইনিশিয়ালাইজেশন
+global.verifiedUsers = {}; // Stores verified users: { userId: true }
 
 (async () => {
-  // Load DB (সম্পূর্ণ ব্লকটি বাদ দেওয়া হলো, এখন DB ছাড়াই চলবে)
-  // try {
-  //   const db = await loadDB();
-  //   global.userDB = db;
-  //   console.log('✅ Database loaded successfully.');
-  // } catch (err) {
-  //   console.warn('⚠️ Failed to load DB, starting with empty DB:', err.message);
-  //   global.userDB = { approved: [], pending: [], banned: [] };
-  // }
-  global.userDB = { approved: [], pending: [], banned: [] }; // ডামি DB অবজেক্ট রাখা হলো যেন অন্য কোডে ক্র্যাশ না করে
+  // Dummy DB Object (Since real DB loading is skipped)
+  global.userDB = { approved: [], pending: [], banned: [] }; 
+  console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
   // Init bot
   const bot = new TelegramBot(config.BOT_TOKEN, {
@@ -53,9 +46,9 @@ global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
 
-  // Load commands and store for callback init
+  // --- Command Loading and Prefix Listener ---
   const commandsPath = path.join(__dirname, 'commands');
-  const commandModules = []; // Added to store modules for later initCallback call
+  const commandModules = []; 
 
   if (fs.existsSync(commandsPath)) {
     const files = fs.readdirSync(commandsPath);
@@ -71,7 +64,7 @@ global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড
             
             commandModules.push(commandModule);
 
-            // Prefix locked trigger
+            // Prefix locked trigger for text commands
             const trigger = new RegExp(
               `^\\${global.PREFIX}(${name}|${aliases.join("|")})$`,
               "i"
@@ -81,9 +74,9 @@ global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
-              // FORCE JOIN REQUIRED_CHATS logic (Simplified for non-start commands)
+              // Force Verification Check (for all commands except /start)
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
-                 if (!global.verifiedUsers || !global.verifiedUsers[userId]) {
+                 if (!global.verifiedUsers[userId]) {
                      let text = `⚠️ বটটি ব্যবহার করার আগে আপনাকে ভেরিফাই করতে হবে। অনুগ্রহ করে ${global.PREFIX}start দিন।`;
                      return bot.sendMessage(chatId, text);
                  }
@@ -107,7 +100,8 @@ global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড
     }
   }
 
-  // --- Callback Listeners চালু করা হচ্ছে (start.js এর জন্য) ---
+  // --- Callback Listeners Initialization ---
+  // This is crucial for button responses (like 'Verify')
   console.log(`\n--- Initializing Callback Listeners ---`);
   for (const module of commandModules) {
       if (module.initCallback) {
@@ -115,12 +109,11 @@ global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড
           console.log(`✅ Initialized Callback for: ${module.config.name}`);
       }
   }
-
-
-  console.log(`\n---------------------------------`);
+  console.log(`---------------------------------`);
   console.log(`✅ Successfully loaded ${global.loadedCommands.length} command(s).`);
 
-  // Express server
+
+  // --- Express server to keep the bot alive ---
   app.listen(port, () => {
     console.log(`🚀 Bot server running via polling on port ${port}`);
     console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
