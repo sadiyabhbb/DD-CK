@@ -1,8 +1,8 @@
-Const TelegramBot = require('node-telegram-bot-api');
+const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const { loadDB, saveDB } = require('./utils/db');
+// const { loadDB, saveDB } = require('./utils/db'); // ❌ এই লাইনটি বাদ দেওয়া হলো
 
 let config = {};
 try {
@@ -19,27 +19,27 @@ try {
 }
 
 const app = express();
-const port = config.PORT || 8080;
+// ✅ পোর্ট সেটআপ (EADDRINUSE ত্রুটি এড়ানোর জন্য)
+const port = process.env.PORT || config.PORT || 8080; 
 
 global.botStartTime = Date.now();
 global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
 global.loadedCommands = [];
-// গ্লোবাল ভেরিফাইড ইউজার্স ইনিশিয়ালাইজ করুন
-global.verifiedUsers = {}; 
-
+global.verifiedUsers = {}; // ✅ গ্লোবাল ভেরিফাইড ইউজার্স ইনিশিয়ালাইজেশন
 
 (async () => {
-  // Load DB
-  try {
-    const db = await loadDB();
-    global.userDB = db;
-    console.log('✅ Database loaded successfully.');
-  } catch (err) {
-    console.warn('⚠️ Failed to load DB, starting with empty DB:', err.message);
-    global.userDB = { approved: [], pending: [], banned: [] };
-  }
+  // Load DB (সম্পূর্ণ ব্লকটি বাদ দেওয়া হলো, এখন DB ছাড়াই চলবে)
+  // try {
+  //   const db = await loadDB();
+  //   global.userDB = db;
+  //   console.log('✅ Database loaded successfully.');
+  // } catch (err) {
+  //   console.warn('⚠️ Failed to load DB, starting with empty DB:', err.message);
+  //   global.userDB = { approved: [], pending: [], banned: [] };
+  // }
+  global.userDB = { approved: [], pending: [], banned: [] }; // ডামি DB অবজেক্ট রাখা হলো যেন অন্য কোডে ক্র্যাশ না করে
 
   // Init bot
   const bot = new TelegramBot(config.BOT_TOKEN, {
@@ -69,7 +69,6 @@ global.verifiedUsers = {};
             const name = commandModule.config.name;
             const aliases = commandModule.config.aliases || [];
             
-            // --- লোড করা মডিউলটি সংরক্ষণ করুন ---
             commandModules.push(commandModule);
 
             // Prefix locked trigger
@@ -82,8 +81,7 @@ global.verifiedUsers = {};
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
-              // FORCE JOIN REQUIRED_CHATS logic (Only for non-start commands)
-              // This is a minimal check for non-verified users attempting to use other commands
+              // FORCE JOIN REQUIRED_CHATS logic (Simplified for non-start commands)
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
                  if (!global.verifiedUsers || !global.verifiedUsers[userId]) {
                      let text = `⚠️ বটটি ব্যবহার করার আগে আপনাকে ভেরিফাই করতে হবে। অনুগ্রহ করে ${global.PREFIX}start দিন।`;
@@ -109,7 +107,7 @@ global.verifiedUsers = {};
     }
   }
 
-  // --- 🔥 এখানে initCallback ফাংশন কল করা হচ্ছে (আপনার মূল সমাধান) 🔥 ---
+  // --- Callback Listeners চালু করা হচ্ছে (start.js এর জন্য) ---
   console.log(`\n--- Initializing Callback Listeners ---`);
   for (const module of commandModules) {
       if (module.initCallback) {
