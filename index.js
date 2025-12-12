@@ -1,4 +1,4 @@
-const TelegramBot = require('node-telegram-bot-api');
+Const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
@@ -26,6 +26,9 @@ global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
 global.loadedCommands = [];
+// গ্লোবাল ভেরিফাইড ইউজার্স ইনিশিয়ালাইজ করুন
+global.verifiedUsers = {}; 
+
 
 (async () => {
   // Load DB
@@ -50,8 +53,10 @@ global.loadedCommands = [];
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
 
-  // Load commands
+  // Load commands and store for callback init
   const commandsPath = path.join(__dirname, 'commands');
+  const commandModules = []; // Added to store modules for later initCallback call
+
   if (fs.existsSync(commandsPath)) {
     const files = fs.readdirSync(commandsPath);
 
@@ -63,6 +68,9 @@ global.loadedCommands = [];
           if (commandModule && commandModule.config && commandModule.run) {
             const name = commandModule.config.name;
             const aliases = commandModule.config.aliases || [];
+            
+            // --- লোড করা মডিউলটি সংরক্ষণ করুন ---
+            commandModules.push(commandModule);
 
             // Prefix locked trigger
             const trigger = new RegExp(
@@ -74,30 +82,13 @@ global.loadedCommands = [];
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
-              // FORCE JOIN REQUIRED_CHATS logic
+              // FORCE JOIN REQUIRED_CHATS logic (Only for non-start commands)
+              // This is a minimal check for non-verified users attempting to use other commands
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
-                let missingChats = [];
-
-                for (const chat of config.REQUIRED_CHATS) {
-                  try {
-                    const member = await bot.getChatMember(chat.id, userId);
-                    if (member.status === "left" || member.status === "kicked") {
-                      missingChats.push(chat);
-                    }
-                  } catch (err) {
-                    missingChats.push(chat);
-                  }
-                }
-
-                if (missingChats.length > 0) {
-                  let text = `⚠️ আপনাকে নিম্নলিখিত গ্রুপ/চ্যানেলে join হতে হবে:\n\n`;
-                  missingChats.forEach(c => {
-                    text += `• ${c.name}: ${c.id}\n`;
-                  });
-                  text += `\nJoin করার পরে আবার ${global.PREFIX}start দিন।`;
-
-                  return bot.sendMessage(chatId, text);
-                }
+                 if (!global.verifiedUsers || !global.verifiedUsers[userId]) {
+                     let text = `⚠️ বটটি ব্যবহার করার আগে আপনাকে ভেরিফাই করতে হবে। অনুগ্রহ করে ${global.PREFIX}start দিন।`;
+                     return bot.sendMessage(chatId, text);
+                 }
               }
 
               // Run the command
@@ -117,6 +108,16 @@ global.loadedCommands = [];
       }
     }
   }
+
+  // --- 🔥 এখানে initCallback ফাংশন কল করা হচ্ছে (আপনার মূল সমাধান) 🔥 ---
+  console.log(`\n--- Initializing Callback Listeners ---`);
+  for (const module of commandModules) {
+      if (module.initCallback) {
+          module.initCallback(bot);
+          console.log(`✅ Initialized Callback for: ${module.config.name}`);
+      }
+  }
+
 
   console.log(`\n---------------------------------`);
   console.log(`✅ Successfully loaded ${global.loadedCommands.length} command(s).`);
