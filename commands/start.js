@@ -2,7 +2,7 @@ module.exports = {
   config: {
     name: "start",
     aliases: [],
-    description: "Force join REQUIRED_CHATS",
+    description: "Force join REQUIRED_CHATS with inline verification",
     prefix: true,
     permission: 0,
     tags: ["core"]
@@ -11,35 +11,51 @@ module.exports = {
   run: async (bot, msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-
     const requiredChats = global.CONFIG.REQUIRED_CHATS;
 
     let missingChats = [];
 
+    const inlineButtons = [];
+
     for (const chat of requiredChats) {
       try {
-        // check member status
         const member = await bot.getChatMember(chat.id, userId);
         if (member.status === "left" || member.status === "kicked") {
           missingChats.push(chat);
+          inlineButtons.push([{
+            text: `❌ ${chat.name}`,
+            url: `https://t.me/${chat.id.replace('@', '')}`
+          }]);
+        } else {
+          inlineButtons.push([{
+            text: `✅ ${chat.name}`,
+            url: `https://t.me/${chat.id.replace('@', '')}`
+          }]);
         }
       } catch (err) {
-        // member check failed, consider as missing
+        // consider missing
         missingChats.push(chat);
+        inlineButtons.push([{
+          text: `❌ ${chat.name}`,
+          url: `https://t.me/${chat.id.replace('@', '')}`
+        }]);
       }
     }
 
-    if (missingChats.length > 0) {
-      let text = `⚠️ আপনাকে নিম্নলিখিত গ্রুপ/চ্যানেলে join হতে হবে:\n\n`;
-      missingChats.forEach(c => {
-        text += `• ${c.name}: ${c.id}\n`;
-      });
-      text += `\nJoin করার পরে /start আবার দিন।`;
+    let messageText = "📌 নিচের গ্রুপ/চ্যানেলে join হতে হবে:\n\n";
+    messageText += "✅ = Already Joined\n❌ = Not Joined\n\n";
 
-      return bot.sendMessage(chatId, text);
+    if (missingChats.length === 0) {
+      messageText = "🎉 আপনি সব REQUIRED_CHATS এ join করেছেন। এখন bot ব্যবহার করতে পারবেন।";
+    } else {
+      messageText += "Join করার পরে /start আবার দিন।";
     }
 
-    // সব গ্রুপে আছে → bot use করতে পারবে
-    bot.sendMessage(chatId, `✅ সব REQUIRED_CHATS-এ আপনি আছেন। এখন bot ব্যবহার করতে পারবেন।`);
+    bot.sendMessage(chatId, messageText, {
+      reply_markup: {
+        inline_keyboard: inlineButtons
+      },
+      parse_mode: "Markdown"
+    });
   }
 };
