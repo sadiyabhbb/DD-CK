@@ -1,4 +1,4 @@
-// start.js (Fixed Logic and Case Sensitivity)
+// start.js (Improved Error Handling in Callback)
 
 module.exports = {
   config: {
@@ -11,6 +11,7 @@ module.exports = {
   },
 
   run: async (bot, msg) => {
+    // ... (run ফাংশনটি আগের মতোই থাকবে, এখানে কোনো পরিবর্তন দরকার নেই)
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
@@ -58,7 +59,6 @@ module.exports = {
       messageText += "✅ = Already Joined\n❌ = Not Joined\n\n";
       messageText += "Join করার পরে নিচের **VERIFY** বোতামটি টিপুন।";
       
-      // Add VERIFY button at the bottom ONLY if chats are missing
       inlineButtons.push([{
         text: "✅ VERIFY",
         callback_data: `verify_user`
@@ -77,52 +77,66 @@ module.exports = {
   // Callback query listener (verify button)
   initCallback: (bot) => {
     bot.on("callback_query", async (query) => {
-      if (query.data !== "verify_user") return; 
-      
-      const userId = query.from.id;
-      const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
-      let missingChats = [];
+      // Added Global Try/Catch to ensure some response is sent
+      try {
+        if (query.data !== "verify_user") return; 
+        
+        const userId = query.from.id;
+        const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
+        let missingChats = [];
 
-      for (const chat of requiredChats) {
-        try {
-          const member = await bot.getChatMember(chat.id, userId);
-          if (member.status === "left" || member.status === "kicked" || member.status === "restricted") {
+        // Re-check membership
+        for (const chat of requiredChats) {
+          try {
+            const member = await bot.getChatMember(chat.id, userId);
+            if (member.status === "left" || member.status === "kicked" || member.status === "restricted") {
+              missingChats.push(chat);
+            }
+          } catch (err) {
             missingChats.push(chat);
           }
-        } catch (err) {
-          missingChats.push(chat);
         }
-      }
 
-      if (missingChats.length === 0) {
-        if(!global.verifiedUsers) global.verifiedUsers = {};
-        global.verifiedUsers[userId] = true;
+        if (missingChats.length === 0) {
+          // Success
+          if(!global.verifiedUsers) global.verifiedUsers = {};
+          global.verifiedUsers[userId] = true;
 
-        await bot.editMessageText("🎉 **Verification Successful!** আপনি সব গ্রুপে join করেছেন। এখন bot ব্যবহার করতে পারবেন।", {
-          chat_id: query.message.chat.id,
-          message_id: query.message.message_id,
-          parse_mode: "Markdown",
-          reply_markup: { inline_keyboard: [] }
-        });
-        return bot.answerCallbackQuery(query.id, { text: "✅ Verification successful!", show_alert: true });
-      } else {
-        // Edit the message to show the updated (still missing) button list
-        const updatedButtons = [];
-        for (const chat of requiredChats) {
-           let isJoined = missingChats.some(m => m.id === chat.id) ? false : true;
-           updatedButtons.push([{
-              text: isJoined ? `✅ ${chat.name}` : `❌ ${chat.name}`,
-              url: `https://t.me/${chat.id.replace('@','')}`
-           }]);
-        }
-        updatedButtons.push([{ text: "✅ VERIFY", callback_data: `verify_user` }]);
-
-        await bot.editMessageReplyMarkup({ inline_keyboard: updatedButtons }, {
+          // 1. Edit the message
+          await bot.editMessageText("🎉 **Verification Successful!** আপনি সব গ্রুপে join করেছেন। এখন bot ব্যবহার করতে পারবেন।", {
             chat_id: query.message.chat.id,
-            message_id: query.message.message_id
-        });
-        
-        return bot.answerCallbackQuery(query.id, { text: "❌ এখনও কিছু গ্রুপে join হয়নি। দয়া করে আবার চেষ্টা করুন।", show_alert: true });
+            message_id: query.message.message_id,
+            parse_mode: "Markdown",
+            reply_markup: { inline_keyboard: [] }
+          });
+          // 2. Answer the callback query
+          return bot.answerCallbackQuery(query.id, { text: "✅ Verification successful!", show_alert: true });
+        } else {
+          // Failure
+          
+          // 1. Update the buttons to show current status
+          const updatedButtons = [];
+          for (const chat of requiredChats) {
+             let isJoined = missingChats.some(m => m.id === chat.id) ? false : true;
+             updatedButtons.push([{
+                text: isJoined ? `✅ ${chat.name}` : `❌ ${chat.name}`,
+                url: `https://t.me/${chat.id.replace('@','')}`
+             }]);
+          }
+          updatedButtons.push([{ text: "✅ VERIFY", callback_data: `verify_user` }]);
+
+          await bot.editMessageReplyMarkup({ inline_keyboard: updatedButtons }, {
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id
+          });
+          
+          // 2. Answer the callback query
+          return bot.answerCallbackQuery(query.id, { text: "❌ এখনও কিছু গ্রুপে join হয়নি। দয়া করে আবার চেষ্টা করুন।", show_alert: true });
+        }
+      } catch (error) {
+        console.error("Callback Query Error:", error);
+        // Fallback: If any error happens, answer the query immediately to avoid infinite loading
+        return bot.answerCallbackQuery(query.id, { text: "⚠️ Verification error occurred. Try again.", show_alert: true });
       }
     });
   }
