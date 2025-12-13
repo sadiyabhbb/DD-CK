@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "shell",
-    credits: "LIKHON AHMED",
+    credits: "LIKHON X TISHA",
     aliases: ["cat", "readfile"],
     prefix: true,
     permission: 2, 
@@ -17,7 +17,7 @@ module.exports.run = async (bot, msg) => {
     const senderId = msg.from.id;
     const args = msg.text.split(/\s+/).slice(1);
     
-    // নিরাপত্তা চেক: শুধুমাত্র বট মালিকের জন্য
+    
     const botOwnerId = global.CONFIG?.BOT_SETTINGS?.ADMINS?.[0];
 
     if (botOwnerId !== senderId.toString()) {
@@ -49,18 +49,18 @@ module.exports.run = async (bot, msg) => {
         const codeBlock = `\`\`\`${language}\n${fileContent}\n\`\`\``;
         const responseMessage = `📁 **File: ${targetPath}**\n\n${codeBlock}`;
         
-        // প্রথম প্রচেষ্টা: মেসেজ আকারে পাঠানোর
+        
         try {
             await bot.sendMessage(chatId, responseMessage, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
 
         } catch (e) {
-            // যদি 'message is too long' ত্রুটি আসে, তবে ডকুমেন্ট আকারে পাঠানো হবে
+            
             if (e.message.includes('message is too long')) {
                 
                 await bot.sendDocument(chatId, filePath, { caption: `✅ File **${targetPath}** sent as document (Too large for text message).`, parse_mode: 'Markdown' }, { filename: path.basename(filePath) });
                 
             } else {
-                // অন্য কোনো API ত্রুটি হলে, সেটি রিপোর্ট করা হবে
+                
                 console.error("Shell command API error:", e);
                 return bot.sendMessage(chatId, `❌ An API error occurred while sending the file. (Error: ${e.message})`, { reply_to_message_id: messageId });
             }
@@ -71,7 +71,7 @@ module.exports.run = async (bot, msg) => {
             return bot.sendMessage(chatId, `❌ Error: File **${targetPath}** not found.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
         console.error("Shell command I/O error:", e);
-        // I/O ত্রুটি (ফাইল পড়তে না পারলে) এটি দেখাবে
+        
         return bot.sendMessage(chatId, `❌ An unknown error occurred while trying to read the file.`, { reply_to_message_id: messageId });
     }
 };
