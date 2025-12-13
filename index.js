@@ -144,7 +144,7 @@ global.saveVerifiedUsers = async function() {
 
   let initialLoadCount = 0;
   
-  console.log(`\n╭─────────COMMANDS─────────╮`);
+  console.log(`\n ╭─────────COMMANDS─────────╮`);
   console.log(`   │                          │`);
   console.log(`   │   Deploying all COMMANDS   │`);
   console.log(`   │                          │`);
@@ -210,7 +210,7 @@ global.saveVerifiedUsers = async function() {
   });
   
   const adminInfo = `
-╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
+  ╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
   │                                                                         │
   │    Facebook: ${global.CONFIG.BOT_SETTINGS.ADMIN_FACEBOOK_URL || "N/A"}    │
   │                       WhatsApp: ${global.CONFIG.BOT_SETTINGS.ADMIN_WHATSAPP || "N/A"}                    │
@@ -221,7 +221,7 @@ global.saveVerifiedUsers = async function() {
   ╰─────────────────────────────────────────────────────────────────────────╯
   `;
   const botInfo = `
-╭──────────────── BOT INFO ─────────────────╮
+   ╭──────────────── BOT INFO ─────────────────╮
    │                                           │
    │      Login: Successfully Login Done       │
    │       Bot User Name: @${botUsername}   │
@@ -231,14 +231,14 @@ global.saveVerifiedUsers = async function() {
    ╰───────────────────────────────────────────╯
   `;
 
-  console.log(`\n✅ Successfully loaded ${initialLoadCount} command(s).`);
+  console.log(`\nSuccessfully loaded ${initialLoadCount} command(s).`);
   console.log(adminInfo);
   console.log(botInfo);
 
 
   app.listen(port, () => {
-    console.log(`🚀 Bot server running via polling on port ${port}`);
-    console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
+    console.log(`Bot server running via polling on port ${port}`);
+    console.log(`Command Prefix locked to: "${global.PREFIX}"`);
   });
 
 })();
