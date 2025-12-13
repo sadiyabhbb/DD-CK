@@ -10,7 +10,6 @@ module.exports.config = {
     tags: ["info", "core"]
 };
 
-// গ্লোবাল ভেরিয়েবল সেট আপ
 if (!global.loadedCommands) {
     global.loadedCommands = []; 
 }
@@ -19,13 +18,11 @@ module.exports.run = async (bot, msg) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
     
-    // মেসেজ থেকে আর্গুমেন্ট বের করা
     const args = msg.text.split(/\s+/).slice(1);
     const prefix = global.PREFIX;
     
     const allCommands = global.loadedCommands.sort((a, b) => a.name.localeCompare(b.name));
 
-    // --- ১. কমান্ডের ডিটেইলস (যেমন: /help gemini) ---
     if (args.length > 0 && isNaN(args[0])) {
         const name = args[0].toLowerCase();
         
@@ -68,8 +65,6 @@ module.exports.run = async (bot, msg) => {
             { reply_to_message_id: messageId, parse_mode: "Markdown" }
         );
     }
-
-    // --- ২. সম্পূর্ণ মেনু পেজ (যেমন: /help বা /help 2) ---
 
     const perPage = 20;
     const totalCommands = allCommands.length;
