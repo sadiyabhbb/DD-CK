@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "help",
-    credits: "MODIFIED LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["menu"],
     prefix: true,
     permission: 0,
