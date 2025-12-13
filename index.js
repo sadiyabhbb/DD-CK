@@ -33,6 +33,8 @@ global.COMMANDS = {};
 global.ALIASES = {}; 
 global.BOT_LISTENERS = []; 
 
+// --- গ্লোবাল কমান্ড লোড/আনলোড ফাংশন ---
+
 global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
     const filePath = path.join(commandsPath, filename);
@@ -63,31 +65,8 @@ global.loadCommand = function(commandName) {
          });
     }
 
-    const aliases = commandModule.config.aliases || [];
-    const trigger = new RegExp(
-        `^\\${global.PREFIX}(${commandModule.config.name}|${aliases.join("|")})(\\s|$)`,
-        "i"
-    );
-
-    const listener = global.bot.onText(trigger, async (msg) => {
-        const userId = msg.from.id;
-        if (commandModule.config.name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
-            if (!global.verifiedUsers[userId]) {
-                let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
-                return global.bot.sendMessage(msg.chat.id, text);
-            }
-        }
-        
-        try {
-            await commandModule.run(global.bot, msg);
-        } catch (err) {
-            console.error(`❌ Command Runtime Error (${commandName}):`, err.message);
-        }
-    });
-
-    global.BOT_LISTENERS.push(listener);
-    
-    if (commandModule.initCallback) {
+    // Callback Initialization (নতুন লোড হওয়া মডিউলের জন্য)
+    if (global.bot && commandModule.initCallback) {
         commandModule.initCallback(global.bot);
     }
 };
@@ -110,6 +89,8 @@ global.unloadCommand = function(commandName) {
     delete global.COMMANDS[commandName];
 };
 
+
+// --- ডেটা লোডিং ফাংশন ---
 
 async function loadVerifiedUsers() {
     try {
@@ -151,6 +132,7 @@ global.saveVerifiedUsers = async function() {
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
   
+  // --- Initial Command Loading ---
   let initialLoadCount = 0;
   if (fs.existsSync(commandsPath)) {
     const files = fs.readdirSync(commandsPath);
@@ -168,16 +150,49 @@ global.saveVerifiedUsers = async function() {
     }
   }
 
+  // --- ইউনিভার্সাল মেসেজ হ্যান্ডলার (সমস্ত কমান্ডের জন্য) ---
   global.bot.on('message', async (msg) => {
-      if (msg.text && msg.text.startsWith(global.PREFIX)) return; 
+      const text = msg.text;
       
-      for (const commandName in global.COMMANDS) {
-          const module = global.COMMANDS[commandName];
-          if (module.handleMessage) {
-              try {
-                  await module.handleMessage(global.bot, msg);
-              } catch (err) {
-                  console.error(`❌ handleMessage Runtime Error (${commandName}):`, err.message);
+      // 1. কমান্ড চেক করা
+      if (text && text.startsWith(global.PREFIX)) {
+        const args = text.slice(global.PREFIX.length).trim().split(/\s+/);
+        const commandNameOrAlias = args.shift().toLowerCase();
+        
+        const actualCommandName = global.ALIASES[commandNameOrAlias] || commandNameOrAlias;
+        const commandModule = global.COMMANDS[actualCommandName];
+
+        if (commandModule && commandModule.run) {
+            const userId = msg.from.id;
+            
+            // Authorization/Verified User Check
+            if (commandModule.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
+                if (!global.verifiedUsers[userId]) {
+                    let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
+                    return global.bot.sendMessage(msg.chat.id, text);
+                }
+            }
+            
+            try {
+                // Run the command
+                await commandModule.run(global.bot, msg);
+            } catch (err) {
+                console.error(`❌ Command Runtime Error (${actualCommandName}):`, err.message);
+            }
+            return; // কমান্ড এক্সিকিউট হলে handleMessage লজিক এড়িয়ে যাওয়া
+        }
+      }
+      
+      // 2. handleMessage লজিক (যদি কমান্ড না হয়)
+      if (text) {
+          for (const commandName in global.COMMANDS) {
+              const module = global.COMMANDS[commandName];
+              if (module.handleMessage) {
+                  try {
+                      await module.handleMessage(global.bot, msg);
+                  } catch (err) {
+                      console.error(`❌ handleMessage Runtime Error (${commandName}):`, err.message);
+                  }
               }
           }
       }
