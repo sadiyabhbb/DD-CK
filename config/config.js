@@ -1,5 +1,5 @@
 module.exports = {
-  BOT_TOKEN: "8561048024:AAGunN8YzGYpRZPt18n9O9DWDH3My5SSdSw",
+  BOT_TOKEN: "8561048024:AAFop0PqzACaP-LEIxYzL2uaw6YMu4OHEtQ",
 
   BOT_SETTINGS: {
     NAME: "𝄞⋆⃝🧚‍𝐁𝐀𝐃𝐎𝐋-𝐁𝐎𝐓🧚‍⋆⃝𝄞",
