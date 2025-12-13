@@ -137,14 +137,14 @@ global.saveVerifiedUsers = async function() {
       const me = await global.bot.getMe();
       botUsername = me.username || "N/A";
       botName = me.first_name || "N/A";
-      botName = global.CONFIG.BOT_SETTINGS.BOT_NAME || botName; 
+      botName = global.CONFIG.BOT_SETTINGS.NAME || botName; 
   } catch (err) {
       console.error("❌ Failed to fetch bot info (getMe):", err.message);
   }
 
   let initialLoadCount = 0;
   
-  console.log(`\n ╭─────────COMMANDS─────────╮`);
+  console.log(`\n╭─────────COMMANDS─────────╮`);
   console.log(`   │                          │`);
   console.log(`   │   Deploying all COMMANDS   │`);
   console.log(`   │                          │`);
@@ -167,6 +167,38 @@ global.saveVerifiedUsers = async function() {
   }
 
   global.bot.on('message', async (msg) => {
+      // --- নতুন লগিং লজিক ---
+      const date = new Date(msg.date * 1000);
+      const formattedTime = date.toLocaleTimeString('en-US', { hour12: false });
+      const formattedDate = date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      
+      const userName = msg.from.username || msg.from.first_name || 'N/A';
+      const chatType = msg.chat.type;
+      
+      let groupName;
+      if (chatType === 'private') {
+          groupName = 'Private Chat';
+      } else if (msg.chat.title) {
+          groupName = msg.chat.title;
+      } else {
+          groupName = 'Group Chat';
+      }
+      
+      const logMessage = `
+╔════════════ ${formattedTime} ════════════╗
+║                                        ║
+║ Message ID: ${msg.message_id} 
+║ User Name: ${userName} 
+║ Group Name: ${groupName} 
+║ Group ID: ${msg.chat.id} 
+║ Message: ${msg.text || '[Non-text Message]'} 
+║ Time: ${formattedDate}, ${formattedTime} 
+║                                        ║
+╚══════════════════════════════════╝
+`;
+      console.log(logMessage);
+      // --- লগিং লজিক শেষ ---
+      
       const text = msg.text;
       
       if (text && text.startsWith(global.PREFIX)) {
@@ -210,7 +242,7 @@ global.saveVerifiedUsers = async function() {
   });
   
   const adminInfo = `
-  ╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
+╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
   │                                                                         │
   │    Facebook: ${global.CONFIG.BOT_SETTINGS.ADMIN_FACEBOOK_URL || "N/A"}    │
   │                       WhatsApp: ${global.CONFIG.BOT_SETTINGS.ADMIN_WHATSAPP || "N/A"}                    │
@@ -221,7 +253,7 @@ global.saveVerifiedUsers = async function() {
   ╰─────────────────────────────────────────────────────────────────────────╯
   `;
   const botInfo = `
-   ╭──────────────── BOT INFO ─────────────────╮
+╭──────────────── BOT INFO ─────────────────╮
    │                                           │
    │      Login: Successfully Login Done       │
    │       Bot User Name: @${botUsername}   │
@@ -231,14 +263,14 @@ global.saveVerifiedUsers = async function() {
    ╰───────────────────────────────────────────╯
   `;
 
-  console.log(`\nSuccessfully loaded ${initialLoadCount} command(s).`);
+  console.log(`\n✅ Successfully loaded ${initialLoadCount} command(s).`);
   console.log(adminInfo);
   console.log(botInfo);
 
 
   app.listen(port, () => {
-    console.log(`Bot server running via polling on port ${port}`);
-    console.log(`Command Prefix locked to: "${global.PREFIX}"`);
+    console.log(`🚀 Bot server running via polling on port ${port}`);
+    console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
   });
 
 })();
