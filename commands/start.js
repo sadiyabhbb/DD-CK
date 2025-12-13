@@ -40,7 +40,9 @@ module.exports = {
       buttons.push([
         {
           text: (joined ? "✅ " : "❌ ") + chat.name,
-          url: `https://t.me/c/${String(chat.id).replace("-100", "")}`
+          url: chat.username
+            ? `https://t.me/${chat.username}`
+            : `https://t.me/c/${String(chat.id).replace("-100", "")}`
         }
       ]);
     }
@@ -109,7 +111,9 @@ module.exports = {
         buttons.push([
           {
             text: (joined ? "✅ " : "❌ ") + chat.name,
-            url: `https://t.me/c/${String(chat.id).replace("-100", "")}`
+            url: chat.username
+              ? `https://t.me/${chat.username}`
+              : `https://t.me/c/${String(chat.id).replace("-100", "")}`
           }
         ]);
       }
