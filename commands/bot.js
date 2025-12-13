@@ -17,17 +17,37 @@ function getRandomGreeting() {
     return greetings[Math.floor(Math.random() * greetings.length)];
 }
 
+// *** নতুন ফাংশন: গ্রিটিং পাঠানো এবং রিপ্লাই হ্যান্ডলার সেট করা ***
+async function sendGreetingAndSetHandler(bot, msg) {
+    const chatId = msg.chat.id;
+    const messageId = msg.message_id;
+
+    const sentMessage = await bot.sendMessage(
+        chatId,
+        getRandomGreeting(),
+        { reply_to_message_id: messageId }
+    );
+
+    // রিপ্লাই হ্যান্ডলার সেট করা
+    if (!global.activeReplies) global.activeReplies = {};
+    
+    global.activeReplies[sentMessage.message_id] = {
+        command: "bot", 
+        authorId: msg.from.id, 
+        chatId: chatId, 
+        expires: Date.now() + 60000 // 60 সেকেন্ড পর এক্সপায়ার হবে
+    };
+}
+
+
 // AI চ্যাট লজিক
 async function handleAIChat(bot, msg, usermsg) {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
     
     if (!usermsg) {
-        return bot.sendMessage(
-            chatId,
-            getRandomGreeting(),
-            { reply_to_message_id: messageId }
-        );
+        // যদি AI চ্যাট ফাংশনে খালি মেসেজ আসে, তবে গ্রিটিং ফাংশন কল করবে।
+        return sendGreetingAndSetHandler(bot, msg);
     }
     
     // API কল
@@ -47,21 +67,16 @@ async function handleAIChat(bot, msg, usermsg) {
         // কনভারসেশন চালিয়ে যাওয়ার জন্য রিপ্লাই হ্যান্ডলার সেট করা
         if (!global.activeReplies) global.activeReplies = {};
         
-        // মেসেজ আইডি, ইউজার আইডি এবং চ্যাট আইডি দিয়ে রিপ্লাই হ্যান্ডলার সেভ করা
         global.activeReplies[sentMessage.message_id] = {
             command: "bot", 
             authorId: msg.from.id, 
             chatId: chatId, 
-            expires: Date.now() + 60000 // 60 সেকেন্ড পর এক্সপায়ার হবে
+            expires: Date.now() + 60000 
         };
-        
-        // পুরনো হ্যান্ডলারগুলো পরিষ্কার করা (মেমরি লিক এড়াতে)
-        // এটি index.js এর handleMessage এ থাকলে ভালো, তবে এখানেও পরিষ্কার করা যেতে পারে।
         
     } catch (err) {
         console.error("❌ Simsimi API error:", err.message);
         
-        // API ব্যর্থ হলে নরমাল মেসেজ
         return bot.sendMessage(
             chatId, 
             "⚠️ এআই বর্তমানে ব্যস্ত অথবা কাজ করছে না।",
@@ -83,10 +98,14 @@ module.exports.config = {
 
 // 1. প্রিফিক্স সহ কমান্ড ট্রিগার হলে এই ফাংশনটি রান হবে (/bot)
 module.exports.run = async (bot, msg) => {
-    // এখানে msg object থেকে usermsg বের করার লজিক ঠিক আছে
     const commandName = msg.text.split(" ")[0].toLowerCase().replace(global.PREFIX, "");
     const usermsg = msg.text.substring(msg.text.indexOf(commandName) + commandName.length).trim();
     
+    // আর্গুমেন্ট না থাকলে নতুন হেল্পার ফাংশন ব্যবহার
+    if (!usermsg) {
+        return sendGreetingAndSetHandler(bot, msg);
+    }
+
     await handleAIChat(bot, msg, usermsg);
 };
 
@@ -94,10 +113,9 @@ module.exports.run = async (bot, msg) => {
 // 2. মেসেজ হ্যান্ডলার, যা প্রিফিক্স ছাড়া মেসেজ এবং রিপ্লাই হ্যান্ডেল করবে
 module.exports.handleMessage = async (bot, msg) => {
     const chatId = msg.chat.id;
-    const messageId = msg.message_id;
     const text = msg.text ? msg.text.trim() : "";
 
-    if (!text) return; // শুধু টেক্সট মেসেজ হ্যান্ডেল করা হবে
+    if (!text) return; 
 
     // --- কনভারসেশন মোড হ্যান্ডলিং (ইউজার রিপ্লাই করেছে) ---
     if (msg.reply_to_message && global.activeReplies) {
@@ -105,9 +123,7 @@ module.exports.handleMessage = async (bot, msg) => {
         const replyHandler = global.activeReplies[repliedToMsgId];
         
         if (replyHandler && replyHandler.command === "bot") {
-            // যদি ইউজার রিপ্লাই করে তবে কনভারসেশন চালিয়ে যান
-            
-            // পুরনো হ্যান্ডলারটি ডিলিট করা
+            // ইউজার রিপ্লাই করলে পুরনো হ্যান্ডলারটি ডিলিট করা
             delete global.activeReplies[repliedToMsgId]; 
             
             // কনভারসেশন চালিয়ে যান
@@ -118,19 +134,20 @@ module.exports.handleMessage = async (bot, msg) => {
 
     // --- শুধুমাত্র "Bot" শব্দটি বা "Bot " দিয়ে শুরু হওয়া টেক্সট ---
     
-    // শুধু "bot" (কেস ইনসেনসিটিভ) চেক করা
+    // শুধু "bot" (কেস ইনসেনসিটিভ)
     if (text.toLowerCase() === "bot") {
-        return bot.sendMessage(
-            chatId,
-            getRandomGreeting(),
-            { reply_to_message_id: messageId }
-        );
+        return sendGreetingAndSetHandler(bot, msg);
     }
     
     // "Bot " দিয়ে শুরু হওয়া টেক্সট
     if (text.toLowerCase().startsWith("bot ")) {
-        const usermsg = text.substring(4).trim(); // "bot " এর পরের অংশ
+        const usermsg = text.substring(4).trim(); 
         
+        // আর্গুমেন্ট না থাকলে র্যান্ডম গ্রিটিং (এবং হ্যান্ডলার সেট)
+        if (!usermsg) {
+             return sendGreetingAndSetHandler(bot, msg);
+        }
+
         await handleAIChat(bot, msg, usermsg);
     }
 };
