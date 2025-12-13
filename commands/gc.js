@@ -1,6 +1,6 @@
 module.exports.config = {
   name: "gc",
-  credits: "LIKHON AHMED (Adapted by Gemini)",
+  credits: "LIKHON X TISHA",
   aliases: ["grp"],
   description: "Manage Your Group Chat Lock/Unlock Feature (Telegram Permissions)",
   prefix: true,
@@ -19,9 +19,7 @@ module.exports.run = async (bot, msg) => {
 
     const sub = args[0].toLowerCase();
 
-    // Telegram API-এর জন্য ChatPermissions অবজেক্ট
-    // Note: 'can_change_info', 'can_invite_users', 'can_pin_messages' are usually left to admins
-    // We primarily control 'can_send_messages' for locking/unlocking.
+  
     const lockPerms = {
       can_send_messages: false,
       can_send_media_messages: false,
@@ -40,7 +38,7 @@ module.exports.run = async (bot, msg) => {
 
     try {
       if (sub === "lock") {
-        // Chat Permissions সেট করতে bot.setChatPermissions ব্যবহার করা হয়
+        
         await bot.setChatPermissions(chatId, lockPerms);
         return bot.sendMessage(chatId, "🚫 Group is locked! Members cannot send messages.", { reply_to_message_id: messageId });
       } else if (sub === "unlock") {
