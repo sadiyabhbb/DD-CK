@@ -39,14 +39,26 @@ module.exports.run = async (bot, msg) => {
             return bot.sendMessage(chatId, `❌ Error: The command file **${filename}** not found in the 'commands' folder.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
 
-        await bot.sendDocument(chatId, filePath, { caption: `✅ Command Source: **${filename}**` }, { filename: filename });
+        // ফাইলের কন্টেন্ট পড়া
+        const fileContent = await fs.readFile(filePath, 'utf8');
+        
+        // ক্যাপশন তৈরি: কোড ব্লক ফর্মে ফাইলের নাম এবং কন্টেন্ট
+        const caption = 
+            `**File: \`${filename}\`**\n` +
+            '```javascript\n' +
+            fileContent +
+            '\n```';
 
-        bot.sendMessage(chatId, `📤 Command file **${filename}** sent successfully.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
+        // ফাইল ডকুমেন্ট হিসেবে পাঠানো
+        await bot.sendDocument(chatId, filePath, { caption: caption, parse_mode: 'Markdown' }, { filename: filename });
+
+        // সফল হলে অতিরিক্ত কনফার্মেশন মেসেজটি আর পাঠানো হবে না।
 
     } catch (e) {
         if (e.code === 'ENOENT') {
             return bot.sendMessage(chatId, `❌ Error: Command **${commandName}** file not found.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
+        console.error("File command error:", e);
         return bot.sendMessage(chatId, `❌ An unknown error occurred while trying to send the file.`, { reply_to_message_id: messageId });
     }
 };
