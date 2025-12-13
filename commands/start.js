@@ -1,4 +1,4 @@
-Module.exports = {
+module.exports = {
   config: {
     name: "start",
     credits: "LIKHON X TISHA",
