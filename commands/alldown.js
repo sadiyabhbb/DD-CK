@@ -4,7 +4,7 @@ const { alldown } = require('nayan-media-downloaders');
 module.exports = {
   config: {
     name: "alldown",
-    credits: "Nayan (Adapted for Telegram by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["alldl", "dl", "down"],
     prefix: true,
     permission: 0,
@@ -22,7 +22,7 @@ module.exports = {
     if (!inputText || !inputText.startsWith("http")) {
       return bot.sendMessage(
         chatId,
-        `❌ লিংক দিন! উদাহরণ: ${global.PREFIX}alldown <লিংক>`,
+        `❌ Uses: ${global.PREFIX}alldown <link>`,
         { reply_to_message_id: messageId }
       );
     }
@@ -38,16 +38,16 @@ module.exports = {
     if (text.startsWith(global.PREFIX)) {
       const commandName = text.split(/\s+/)[0].toLowerCase().slice(global.PREFIX.length);
       const config = module.exports.config;
-      // যদি এটি /alldown কমান্ডের মাধ্যমে আসে, তবে শুধুমাত্র আর্গুমেন্ট (লিংক) ব্যবহার করবে
+      
       if (commandName === config.name || config.aliases.includes(commandName)) {
           const args = text.split(/\s+/).slice(1);
           if (args.length > 0 && args[0].startsWith("http")) {
-              text = args[0]; // কমান্ডের আর্গুমেন্ট থেকে লিংক নেওয়া
+              text = args[0]; 
           } else {
-              return; // লিংক ছাড়া শুধু কমান্ড হলে উপেক্ষা করা
+              return; 
           }
       } else {
-          return; // অন্য কমান্ড হলে উপেক্ষা করা
+          return; 
       }
     }
 
@@ -55,7 +55,7 @@ module.exports = {
 
     const waitMsg = await bot.sendMessage(
         chatId,
-        "⏳ স্বয়ংক্রিয় ডাউনলোড প্রক্রিয়া চলছে...",
+        "⏳ Downloading Please Wait...!",
         { reply_to_message_id: messageId }
     );
     const waitMsgId = waitMsg.message_id;
@@ -67,12 +67,12 @@ module.exports = {
       const vidResponse = await axios.get(high, { responseType: 'stream' });
       const videoStream = vidResponse.data;
 
-      const caption = `✅ *ডাউনলোড সফল* 🎬\n*Title:* ${title}`;
+      const caption = `🎬\n*Title:* ${title}`;
 
       const replyMarkup = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '🔗 Bot Owner', url: 'https://t.me/LIKHONAHMED009' }],
+            [{ text: '🔗 𝐁𝐎𝐓 𝐎𝐖𝐍𝐄𝐑', url: 'https://t.me/LIKHONAHMED009' }],
           ],
         },
       };
@@ -90,7 +90,7 @@ module.exports = {
       console.error('❌ Error in alldown handleMessage:', error.message);
       
       await bot.editMessageText(
-        '❌ স্বয়ংক্রিয়ভাবে ডাউনলোড করতে ব্যর্থ হয়েছে। লিংকটি যাচাই করুন বা পরে আবার চেষ্টা করুন।',
+        '❌ 𝐅𝐚𝐢𝐥𝐞𝐝 𝐭𝐨 𝐝𝐨𝐰𝐧𝐥𝐨𝐚𝐝 𝐚𝐮𝐭𝐨𝐦𝐚𝐭𝐢𝐜𝐚𝐥𝐥𝐲. 𝐏𝐥𝐞𝐚𝐬𝐞 𝐯𝐞𝐫𝐢𝐟𝐲 𝐭𝐡𝐞 𝐥𝐢𝐧𝐤 𝐨𝐫 𝐭𝐫𝐲 𝐚𝐠𝐚𝐢𝐧 𝐥𝐚𝐭𝐞𝐫.',
         {
           chat_id: chatId,
           message_id: waitMsgId
