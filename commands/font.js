@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports.config = {
     name: 'font',
-    credits: 'LIKHON6T9X (Adapted for Telegram by Gemini)',
+    credits: 'LIKHON X TISHA',
     aliases: ['fnt'],
     prefix: true,
     permission: 0, 
