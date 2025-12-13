@@ -1,20 +1,7 @@
 const axios = require("axios");
 
-// গ্লোবাল API URL লোড করার জন্য
-const API_URL_SOURCE = "https://raw.githubusercontent.com/MOHAMMAD-NAYAN-07/Nayan/main/api.json";
-let nayanApiUrl = null;
-
-async function fetchNayanApiUrl() {
-    if (nayanApiUrl) return nayanApiUrl;
-    try {
-        const response = await axios.get(API_URL_SOURCE);
-        nayanApiUrl = response.data.api;
-        return nayanApiUrl;
-    } catch (err) {
-        console.error("❌ Failed to fetch Nayan API URL:", err.message);
-        return null;
-    }
-}
+// নতুন সিম API URL
+const SIM_API_URL = "http://65.109.80.126:20392/sim";
 
 // র্যান্ডম মেসেজ দেওয়ার ফাংশন
 function getRandomGreeting() {
@@ -31,34 +18,47 @@ function getRandomGreeting() {
 }
 
 // AI চ্যাট লজিক
-async function handleAIChat(bot, chatId, messageId, usermsg) {
-    const apiUrl = await fetchNayanApiUrl();
-    if (!apiUrl) {
+async function handleAIChat(bot, chatId, messageId, usermsg, isReplyHandler = false) {
+    if (!usermsg) {
         return bot.sendMessage(
-            chatId, 
-            "❌ AI API URL লোড করতে ব্যর্থ।",
+            chatId,
+            getRandomGreeting(),
             { reply_to_message_id: messageId }
         );
     }
-
+    
+    // API কল
     try {
         const response = await axios.get(
-            `${apiUrl}/sim?type=ask&ask=${encodeURIComponent(usermsg)}`
+            `${SIM_API_URL}?type=ask&ask=${encodeURIComponent(usermsg)}`
         );
 
         const replyText = response.data.data?.msg || "🤖 আমি বুঝতে পারিনি, বা API রেসপন্স দেয়নি।";
 
-        return bot.sendMessage(
+        const sentMessage = await bot.sendMessage(
             chatId, 
             replyText, 
             { reply_to_message_id: messageId }
         );
 
+        // যদি কমান্ড মোড থেকে আসে, তবে কনভারসেশন চালু করার জন্য রিপ্লাই হ্যান্ডলার সেট করা হবে।
+        if (!isReplyHandler) {
+            if (!global.activeReplies) global.activeReplies = {};
+            
+            // মেসেজ আইডি দিয়ে রিপ্লাই হ্যান্ডলার সেভ করা
+            global.activeReplies[sentMessage.message_id] = {
+                command: "bot", 
+                authorId: msg.from.id, 
+                threadId: chatId, 
+                expires: Date.now() + 60000 // 60 সেকেন্ড পর অটোমেটিক এক্সপায়ার হবে
+            };
+        }
+
     } catch (err) {
-        console.log("❌ Bot API error:", err.message);
+        console.error("❌ Simsimi API error:", err.message);
         return bot.sendMessage(
             chatId, 
-            "❌ Bot API বর্তমানে কাজ করছে না, অনুগ্রহ করে পরে চেষ্টা করুন।",
+            "❌ AI API বর্তমানে কাজ করছে না, অনুগ্রহ করে পরে চেষ্টা করুন।",
             { reply_to_message_id: messageId }
         );
     }
@@ -71,36 +71,40 @@ module.exports.config = {
   aliases: ["sim"],
   prefix: true, 
   permission: 0,
-  description: "AI Chat using Simsimi API (Telegram)",
+  description: "AI Chat using Simsimi API with conversation mode.",
   tags: ["ai", "chat"]
 };
 
-// প্রিফিক্স সহ কমান্ড ট্রিগার হলে এই ফাংশনটি রান হবে (/bot)
+// 1. প্রিফিক্স সহ কমান্ড ট্রিগার হলে এই ফাংশনটি রান হবে (/bot)
 module.exports.run = async (bot, msg) => {
-    const chatId = msg.chat.id;
-    const messageId = msg.message_id;
-    
     const commandName = msg.text.split(" ")[0].toLowerCase().replace(global.PREFIX, "");
     const usermsg = msg.text.substring(msg.text.indexOf(commandName) + commandName.length).trim();
     
-    if (!usermsg) {
-        return bot.sendMessage(
-            chatId,
-            getRandomGreeting(),
-            { reply_to_message_id: messageId }
-        );
-    }
-    
-    await handleAIChat(bot, chatId, messageId, usermsg);
+    await handleAIChat(bot, msg.chat.id, msg.message_id, usermsg);
 };
 
 
-// মেসেজ হ্যান্ডলার, যা প্রিফিক্স ছাড়া মেসেজ (শুধু "Bot") হ্যান্ডেল করবে
+// 2. মেসেজ হ্যান্ডলার, যা প্রিফিক্স ছাড়া মেসেজ (শুধু "Bot") হ্যান্ডেল করবে
 module.exports.handleMessage = async (bot, msg) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
     const text = msg.text.trim();
     
+    // কনভারসেশন মোড হ্যান্ডলিং (যদি ইউজার বটের মেসেজ রিপ্লাই করে)
+    if (msg.reply_to_message && global.activeReplies && global.activeReplies[msg.reply_to_message.message_id]) {
+        const replyHandler = global.activeReplies[msg.reply_to_message.message_id];
+        
+        // নিশ্চিত করুন এটি এই কমান্ডের জন্য এবং রিপ্লাইকারী সঠিক ইউজার কিনা
+        if (replyHandler.command === "bot") {
+            // যদি এটি একটি নতুন চ্যাট হয়, তবে পুরনো হ্যান্ডলার মুছে দিন
+            delete global.activeReplies[msg.reply_to_message.message_id];
+            
+            // কনভারসেশন চালিয়ে যান
+            return handleAIChat(bot, chatId, messageId, text, true);
+        }
+    }
+
+
     // শুধুমাত্র "bot" শব্দটি (case insensitive) চেক করা হলো
     if (text.toLowerCase() === "bot") {
         return bot.sendMessage(
@@ -125,3 +129,4 @@ module.exports.handleMessage = async (bot, msg) => {
         await handleAIChat(bot, chatId, messageId, usermsg);
     }
 };
+
