@@ -11,6 +11,9 @@ module.exports.config = {
     tags: ["system", "owner"]
 };
 
+// Telegram ক্যাপশনের সর্বোচ্চ সীমা
+const MAX_CAPTION_LENGTH = 1024;
+
 module.exports.run = async (bot, msg) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
@@ -39,26 +42,41 @@ module.exports.run = async (bot, msg) => {
             return bot.sendMessage(chatId, `❌ Error: The command file **${filename}** not found in the 'commands' folder.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
 
-        // ফাইলের কন্টেন্ট পড়া
+        // 1. ফাইলের কন্টেন্ট পড়া
         const fileContent = await fs.readFile(filePath, 'utf8');
+        const codeBlockContent = '```javascript\n' + fileContent + '\n```';
         
-        // ক্যাপশন তৈরি: কোড ব্লক ফর্মে ফাইলের নাম এবং কন্টেন্ট
-        const caption = 
-            `**File: \`${filename}\`**\n` +
-            '```javascript\n' +
-            fileContent +
-            '\n```';
+        let fileCaption = `**File: \`${filename}\`**`;
+        let documentSent = false;
+        
+        // 2. ক্যাপশনের সীমা পরীক্ষা
+        if ((fileCaption + codeBlockContent).length <= MAX_CAPTION_LENGTH) {
+            
+            // যদি কনটেন্ট ছোট হয়, ক্যাপশনে পাঠানো হবে
+            fileCaption += '\n' + codeBlockContent;
 
-        // ফাইল ডকুমেন্ট হিসেবে পাঠানো
-        await bot.sendDocument(chatId, filePath, { caption: caption, parse_mode: 'Markdown' }, { filename: filename });
+            await bot.sendDocument(chatId, filePath, { caption: fileCaption, parse_mode: 'Markdown' }, { filename: filename });
+            documentSent = true;
+            
+        } else {
+            
+            // যদি কনটেন্ট বড় হয়, ক্যাপশন ছাড়াই শুধু ডকুমেন্ট পাঠানো হবে
+            await bot.sendDocument(chatId, filePath, { caption: fileCaption, parse_mode: 'Markdown' }, { filename: filename });
+            documentSent = true;
 
-        // সফল হলে অতিরিক্ত কনফার্মেশন মেসেজটি আর পাঠানো হবে না।
-
+            // এবং আলাদা মেসেজে পুরো কোডটি পাঠানো হবে
+            const largeFileMessage = `📤 **Source Code of \`${filename}\` (Too Large for Caption):**\n${codeBlockContent}`;
+            // Telegram মেসেজের সীমা (4096) মাথায় রেখে কনটেন্ট ভাগ করা লাগতে পারে, কিন্তু আপাতত ধরে নিচ্ছি 4096 এর মধ্যে থাকবে।
+            await bot.sendMessage(chatId, largeFileMessage, { parse_mode: 'Markdown' });
+        }
+        
     } catch (e) {
         if (e.code === 'ENOENT') {
             return bot.sendMessage(chatId, `❌ Error: Command **${commandName}** file not found.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
         console.error("File command error:", e);
-        return bot.sendMessage(chatId, `❌ An unknown error occurred while trying to send the file.`, { reply_to_message_id: messageId });
+        
+        // এখানে যদি error আসে, তবে 99% ক্ষেত্রে তা Telegram API এর ক্যাপশন সীমার জন্য।
+        return bot.sendMessage(chatId, `❌ An unknown error occurred while trying to send the file. Please check the file size. (Error details: ${e.message || 'API Error'}).`, { reply_to_message_id: messageId });
     }
 };
