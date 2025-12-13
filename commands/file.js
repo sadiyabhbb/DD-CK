@@ -11,7 +11,6 @@ module.exports.config = {
     tags: ["system", "owner"]
 };
 
-// Telegram ক্যাপশনের সর্বোচ্চ সীমা
 const MAX_CAPTION_LENGTH = 1024;
 
 module.exports.run = async (bot, msg) => {
@@ -42,41 +41,36 @@ module.exports.run = async (bot, msg) => {
             return bot.sendMessage(chatId, `❌ Error: The command file **${filename}** not found in the 'commands' folder.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
 
-        // 1. ফাইলের কন্টেন্ট পড়া
         const fileContent = await fs.readFile(filePath, 'utf8');
         const codeBlockContent = '```javascript\n' + fileContent + '\n```';
         
         let fileCaption = `**File: \`${filename}\`**`;
-        let documentSent = false;
         
-        // 2. ক্যাপশনের সীমা পরীক্ষা
         if ((fileCaption + codeBlockContent).length <= MAX_CAPTION_LENGTH) {
             
-            // যদি কনটেন্ট ছোট হয়, ক্যাপশনে পাঠানো হবে
             fileCaption += '\n' + codeBlockContent;
-
             await bot.sendDocument(chatId, filePath, { caption: fileCaption, parse_mode: 'Markdown' }, { filename: filename });
-            documentSent = true;
             
         } else {
             
-            // যদি কনটেন্ট বড় হয়, ক্যাপশন ছাড়াই শুধু ডকুমেন্ট পাঠানো হবে
             await bot.sendDocument(chatId, filePath, { caption: fileCaption, parse_mode: 'Markdown' }, { filename: filename });
-            documentSent = true;
 
-            // এবং আলাদা মেসেজে পুরো কোডটি পাঠানো হবে
             const largeFileMessage = `📤 **Source Code of \`${filename}\` (Too Large for Caption):**\n${codeBlockContent}`;
-            // Telegram মেসেজের সীমা (4096) মাথায় রেখে কনটেন্ট ভাগ করা লাগতে পারে, কিন্তু আপাতত ধরে নিচ্ছি 4096 এর মধ্যে থাকবে।
-            await bot.sendMessage(chatId, largeFileMessage, { parse_mode: 'Markdown' });
+            
+            try {
+                 await bot.sendMessage(chatId, largeFileMessage, { parse_mode: 'Markdown' });
+            } catch (e) {
+                if (!e.message.includes('message is too long')) {
+                    console.error("Large message part error (but not 'too long'):", e);
+                }
+            }
         }
         
     } catch (e) {
         if (e.code === 'ENOENT') {
             return bot.sendMessage(chatId, `❌ Error: Command **${commandName}** file not found.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
-        console.error("File command error:", e);
         
-        // এখানে যদি error আসে, তবে 99% ক্ষেত্রে তা Telegram API এর ক্যাপশন সীমার জন্য।
-        return bot.sendMessage(chatId, `❌ An unknown error occurred while trying to send the file. Please check the file size. (Error details: ${e.message || 'API Error'}).`, { reply_to_message_id: messageId });
+        return bot.sendMessage(chatId, `❌ An unknown error occurred while processing the file.`, { reply_to_message_id: messageId });
     }
 };
