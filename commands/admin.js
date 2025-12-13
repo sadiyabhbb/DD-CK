@@ -13,6 +13,22 @@ module.exports.config = {
 
 const CONFIG_FILE_PATH = path.resolve(process.cwd(), 'config.json'); 
 
+async function getUserInfo(bot, chatId, userId) {
+    try {
+        const member = await bot.getChatMember(chatId, userId);
+        let name = member.user.first_name || 'N/A';
+        if (member.user.last_name) {
+            name += ' ' + member.user.last_name;
+        }
+        if (member.user.username) {
+            name += ` (@${member.user.username})`;
+        }
+        return name;
+    } catch (error) {
+        return 'Unknown User (Error fetching name)';
+    }
+}
+
 async function addAdmin(userId) {
     if (!global.CONFIG || !global.CONFIG.BOT_SETTINGS || !global.CONFIG.BOT_SETTINGS.ADMINS) {
         return false; 
@@ -68,8 +84,9 @@ module.exports.run = async (bot, msg) => {
     const args = msg.text.split(/\s+/).slice(1);
     const prefix = global.PREFIX;
     
-    if (!global.CONFIG || !global.CONFIG.BOT_SETTINGS || !global.CONFIG.BOT_SETTINGS.ADMINS || global.CONFIG.BOT_SETTINGS.ADMINS[0] !== senderId.toString()) {
-         return bot.sendMessage(chatId, `❌ Permission denied. Only the ${global.CONFIG.BOT_SETTINGS.ADMINS[0]} (Bot Owner) can use this command.`, { reply_to_message_id: messageId });
+    const botOwnerId = global.CONFIG?.BOT_SETTINGS?.ADMINS?.[0];
+    if (botOwnerId !== senderId.toString()) {
+         return bot.sendMessage(chatId, `❌ Permission denied. Only the Bot Owner (${botOwnerId || 'Not Set'}) can use this command.`, { reply_to_message_id: messageId });
     }
 
     const action = args[0]?.toLowerCase();
@@ -88,11 +105,12 @@ module.exports.run = async (bot, msg) => {
     
     if (action === "add") {
         const result = await addAdmin(targetId);
+        const name = await getUserInfo(bot, chatId, targetId); 
         
         if (result === "added") {
-            return bot.sendMessage(chatId, `✅ Successfully added ID ${targetId} as a Bot Admin.`, { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, `✅ Successfully added **${name}** (ID: ${targetId}) as a Bot Admin.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         } else if (result === "already_admin") {
-            return bot.sendMessage(chatId, `⚠️ ID ${targetId} is already a Bot Admin.`, { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, `⚠️ **${name}** (ID: ${targetId}) is already a Bot Admin.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         } else {
             return bot.sendMessage(chatId, `❌ Failed to add admin.`, { reply_to_message_id: messageId });
         }
@@ -104,11 +122,12 @@ module.exports.run = async (bot, msg) => {
         }
         
         const result = await removeAdmin(targetId);
+        const name = await getUserInfo(bot, chatId, targetId);
         
         if (result === "removed") {
-            return bot.sendMessage(chatId, `✅ Successfully removed ID ${targetId} from the Bot Admin list.`, { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, `✅ Successfully removed **${name}** (ID: ${targetId}) from the Bot Admin list.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         } else if (result === "not_admin") {
-            return bot.sendMessage(chatId, `⚠️ ID ${targetId} is not a Bot Admin.`, { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, `⚠️ **${name}** (ID: ${targetId}) is not a Bot Admin.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         } else {
             return bot.sendMessage(chatId, `❌ Failed to remove admin.`, { reply_to_message_id: messageId });
         }
@@ -123,9 +142,11 @@ module.exports.run = async (bot, msg) => {
 
         let adminListMsg = "╭━━━━━━❰ 👑 BOT ADMINS ❱━━━━━━╮\n";
         
-        admins.forEach((id, index) => {
-            adminListMsg += `│ ${index + 1}. ID: ${id}\n`;
-        });
+        for (let i = 0; i < admins.length; i++) {
+            const id = admins[i];
+            const name = await getUserInfo(bot, chatId, id); 
+            adminListMsg += `│ ${i + 1}. ${name} (ID: ${id})\n`;
+        }
 
         adminListMsg += "╰━━━━━━━━━━━━━━━━━━━━━━❍";
 
