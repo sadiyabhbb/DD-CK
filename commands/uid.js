@@ -9,7 +9,7 @@ function escapeMarkdown(text) {
 
 module.exports.config = {
   name: "uid",
-  credits: "LIKHON X TISHA (Adapted by Gemini)",
+  credits: "LIKHON X TISHA",
   aliases: ["id", "userid", "whois"],
   prefix: true,
   permission: 0,
