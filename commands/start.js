@@ -60,7 +60,7 @@ module.exports = {
     }
 
     // Not joined
-    buttons.push([{ text: "✅ VERIFY", callback_data: "verify_join" }]);
+    buttons.push([{ text: "✅ 𝐕𝐄𝐑𝐈𝐅𝐘", callback_data: "verify_join" }]);
 
     if (!global.verifiedUsers) global.verifiedUsers = {};
     global.verifiedUsers[userId] = false;
@@ -127,7 +127,7 @@ module.exports = {
         });
 
         return bot.editMessageText(
-          "🎉 **Verification Successful!**\n\nআপনি সব group/channel এ join করেছেন ✅",
+          "🎉 **𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐓𝐈𝐎𝐍 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋!**\n\nআপনি সব group/channel এ join করেছেন ✅",
           {
             chat_id: chatId,
             message_id: msgId,
@@ -137,7 +137,7 @@ module.exports = {
         );
       }
 
-      buttons.push([{ text: "✅ VERIFY", callback_data: "verify_join" }]);
+      buttons.push([{ text: "✅ 𝐕𝐄𝐑𝐈𝐅𝐘", callback_data: "verify_join" }]);
 
       await bot.answerCallbackQuery(query.id, {
         text: "❌ এখনও কিছু group/channel এ join করা হয়নি!"
