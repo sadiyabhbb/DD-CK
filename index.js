@@ -4,7 +4,9 @@ const path = require('path');
 const express = require('express');
 const fse = require('fs-extra'); 
 
-// Configuration Loading
+const commandsPath = path.join(__dirname, 'commands');
+const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
+
 let config = {};
 try {
   const configPath = path.join(__dirname, 'config', 'config.js');
@@ -19,19 +21,96 @@ try {
   process.exit(1);
 }
 
-// Global Variables Setup
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
-
-const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
 
 global.botStartTime = Date.now();
 global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
-global.loadedCommands = [];
 
-// --- ডেটা লোডিং ফাংশন ---
+global.COMMANDS = {}; 
+global.ALIASES = {}; 
+global.BOT_LISTENERS = []; 
+
+global.loadCommand = function(commandName) {
+    const filename = `${commandName}.js`;
+    const filePath = path.join(commandsPath, filename);
+
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Command file ${filename} not found.`);
+    }
+
+    if (global.COMMANDS[commandName]) {
+        global.unloadCommand(commandName);
+    }
+    
+    if (require.cache[require.resolve(filePath)]) {
+        delete require.cache[require.resolve(filePath)];
+    }
+
+    const commandModule = require(filePath);
+
+    if (!commandModule.config || !commandModule.run) {
+        throw new Error(`Invalid command structure. Missing 'config' or 'run' in ${filename}.`);
+    }
+
+    global.COMMANDS[commandName] = commandModule;
+    
+    if (commandModule.config.aliases) {
+         commandModule.config.aliases.forEach(alias => {
+             global.ALIASES[alias] = commandName;
+         });
+    }
+
+    const aliases = commandModule.config.aliases || [];
+    const trigger = new RegExp(
+        `^\\${global.PREFIX}(${commandModule.config.name}|${aliases.join("|")})(\\s|$)`,
+        "i"
+    );
+
+    const listener = global.bot.onText(trigger, async (msg) => {
+        const userId = msg.from.id;
+        if (commandModule.config.name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
+            if (!global.verifiedUsers[userId]) {
+                let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
+                return global.bot.sendMessage(msg.chat.id, text);
+            }
+        }
+        
+        try {
+            await commandModule.run(global.bot, msg);
+        } catch (err) {
+            console.error(`❌ Command Runtime Error (${commandName}):`, err.message);
+        }
+    });
+
+    global.BOT_LISTENERS.push(listener);
+    
+    if (commandModule.initCallback) {
+        commandModule.initCallback(global.bot);
+    }
+};
+
+global.unloadCommand = function(commandName) {
+    const commandModule = global.COMMANDS[commandName];
+    if (!commandModule) return;
+
+    if (commandModule.config && commandModule.config.aliases) {
+        commandModule.config.aliases.forEach(alias => {
+            delete global.ALIASES[alias];
+        });
+    }
+    
+    const filePath = path.join(commandsPath, `${commandName}.js`);
+    if (require.cache[require.resolve(filePath)]) {
+        delete require.cache[require.resolve(filePath)];
+    }
+
+    delete global.COMMANDS[commandName];
+};
+
+
 async function loadVerifiedUsers() {
     try {
         if (fse.existsSync(VERIFIED_USERS_FILE)) {
@@ -45,7 +124,6 @@ async function loadVerifiedUsers() {
     }
 }
 
-// --- ডেটা সেভিং ফাংশন (Global Access) ---
 global.saveVerifiedUsers = async function() {
     try {
         await fse.writeJson(VERIFIED_USERS_FILE, global.verifiedUsers, { spaces: 2 });
@@ -55,70 +133,34 @@ global.saveVerifiedUsers = async function() {
 };
 
 (async () => {
-  // *** ভেরিফাইড ইউজার ডেটা লোড করা হচ্ছে ***
   global.verifiedUsers = await loadVerifiedUsers();
   console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
 
-  // Dummy DB Object
   global.userDB = { approved: [], pending: [], banned: [] }; 
   console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
-  // Init bot
-  const bot = new TelegramBot(config.BOT_TOKEN, {
+  const telegramBot = new TelegramBot(config.BOT_TOKEN, {
     polling: true,
     fileDownloadOptions: {
       headers: { 'User-Agent': 'Telegram Bot' }
     }
   });
+  global.bot = telegramBot; 
 
-  bot.on("polling_error", (error) => {
+  global.bot.on("polling_error", (error) => {
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
-
-  // --- Command Loading and Prefix Listener ---
-  const commandsPath = path.join(__dirname, 'commands');
-  const commandModules = []; 
-
+  
+  let initialLoadCount = 0;
   if (fs.existsSync(commandsPath)) {
     const files = fs.readdirSync(commandsPath);
 
     for (const file of files) {
       if (file.endsWith(".js")) {
+        const commandName = file.slice(0, -3);
         try {
-          const commandModule = require(path.join(commandsPath, file));
-
-          if (commandModule && commandModule.config && commandModule.run) {
-            const name = commandModule.config.name;
-            const aliases = commandModule.config.aliases || [];
-            
-            commandModules.push(commandModule);
-
-            const trigger = new RegExp(
-              `^\\${global.PREFIX}(${name}|${aliases.join("|")})(\\s|$)`,
-              "i"
-            );
-
-            bot.onText(trigger, async (msg) => {
-              const chatId = msg.chat.id;
-              const userId = msg.from.id;
-
-              if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
-                 if (!global.verifiedUsers[userId]) {
-                     let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
-                     return bot.sendMessage(chatId, text);
-                 }
-              }
-
-              try {
-                await commandModule.run(bot, msg);
-              } catch (err) {
-                console.error(`❌ Command Runtime Error (${name}):`, err.message);
-              }
-            });
-
-            global.loadedCommands.push(commandModule.config);
-            console.log(`📌 Loaded Command: ${name} (Prefix: ${global.PREFIX})`);
-          }
+          global.loadCommand(commandName);
+          initialLoadCount++;
         } catch (err) {
           console.error(`❌ Error loading command ${file}:`, err.message);
         }
@@ -126,33 +168,23 @@ global.saveVerifiedUsers = async function() {
     }
   }
 
-  bot.on('message', async (msg) => {
-      if (!msg.text || msg.text.startsWith(global.PREFIX)) return; 
+  global.bot.on('message', async (msg) => {
+      if (msg.text && msg.text.startsWith(global.PREFIX)) return; 
       
-      for (const module of commandModules) {
+      for (const commandName in global.COMMANDS) {
+          const module = global.COMMANDS[commandName];
           if (module.handleMessage) {
               try {
-                  await module.handleMessage(bot, msg);
+                  await module.handleMessage(global.bot, msg);
               } catch (err) {
-                  console.error(`❌ handleMessage Runtime Error (${module.config.name}):`, err.message);
+                  console.error(`❌ handleMessage Runtime Error (${commandName}):`, err.message);
               }
           }
       }
   });
 
-  // --- Callback Listeners Initialization ---
-  console.log(`\n--- Initializing Callback Listeners ---`);
-  for (const module of commandModules) {
-      if (module.initCallback) {
-          module.initCallback(bot);
-          console.log(`✅ Initialized Callback for: ${module.config.name}`);
-      }
-  }
-  console.log(`---------------------------------`);
-  console.log(`✅ Successfully loaded ${global.loadedCommands.length} command(s).`);
+  console.log(`✅ Successfully loaded ${initialLoadCount} command(s).`);
 
-
-  // --- Express server to keep the bot alive ---
   app.listen(port, () => {
     console.log(`🚀 Bot server running via polling on port ${port}`);
     console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
