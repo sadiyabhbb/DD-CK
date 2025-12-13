@@ -13,10 +13,10 @@ try {
   if (fs.existsSync(configPath)) {
     config = require(configPath);
   } else {
-    throw new Error('config/config.js file not found. Please create it.');
+    throw new Error('config.js file not found. Please create it.');
   }
 } catch (err) {
-  console.error(`❌ FATAL: Configuration load failed: ${err.message}`);
+  console.error(`FATAL: Configuration load failed: ${err.message}`);
   process.exit(1);
 }
 
@@ -112,10 +112,10 @@ global.saveVerifiedUsers = async function() {
 
 (async () => {
   global.verifiedUsers = await loadVerifiedUsers();
-  console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
+  console.log(`Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
 
   global.userDB = { approved: [], pending: [], banned: [] }; 
-  console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
+  console.log('Database loading skipped. Using in-memory dummy DB.');
 
   const telegramBot = new TelegramBot(config.BOT_TOKEN, {
     polling: true,
@@ -139,7 +139,7 @@ global.saveVerifiedUsers = async function() {
       botName = me.first_name || "N/A";
       botName = global.CONFIG.BOT_SETTINGS.NAME || botName; 
   } catch (err) {
-      console.error("❌ Failed to fetch bot info (getMe):", err.message);
+      console.error("Failed to fetch bot info (getMe):", err.message);
   }
 
   let initialLoadCount = 0;
@@ -167,7 +167,7 @@ global.saveVerifiedUsers = async function() {
   }
 
   global.bot.on('message', async (msg) => {
-      // --- নতুন লগিং লজিক ---
+    
       const date = new Date(msg.date * 1000);
       const formattedTime = date.toLocaleTimeString('en-US', { hour12: false });
       const formattedDate = date.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -197,7 +197,7 @@ global.saveVerifiedUsers = async function() {
 ╚══════════════════════════════════╝
 `;
       console.log(logMessage);
-      // --- লগিং লজিক শেষ ---
+      
       
       const text = msg.text;
       
@@ -263,14 +263,14 @@ global.saveVerifiedUsers = async function() {
    ╰───────────────────────────────────────────╯
   `;
 
-  console.log(`\n✅ Successfully loaded ${initialLoadCount} command(s).`);
+  console.log(`\n Successfully loaded ${initialLoadCount} command(s).`);
   console.log(adminInfo);
   console.log(botInfo);
 
 
   app.listen(port, () => {
-    console.log(`🚀 Bot server running via polling on port ${port}`);
-    console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
+    console.log(`Bot server running via polling on port ${port}`);
+    console.log(` Command Prefix locked to: "${global.PREFIX}"`);
   });
 
 })();
