@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const fse = require('fs-extra'); 
 
 // Configuration Loading
 let config = {};
@@ -22,15 +23,43 @@ try {
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
+const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
+
 global.botStartTime = Date.now();
 global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
 global.loadedCommands = [];
-global.verifiedUsers = {};
+
+// --- ডেটা লোডিং ফাংশন ---
+async function loadVerifiedUsers() {
+    try {
+        if (fse.existsSync(VERIFIED_USERS_FILE)) {
+            const data = await fse.readJson(VERIFIED_USERS_FILE);
+            return data;
+        }
+        return {}; 
+    } catch (error) {
+        console.error("❌ Error loading verified users data:", error.message);
+        return {};
+    }
+}
+
+// --- ডেটা সেভিং ফাংশন (Global Access) ---
+global.saveVerifiedUsers = async function() {
+    try {
+        await fse.writeJson(VERIFIED_USERS_FILE, global.verifiedUsers, { spaces: 2 });
+    } catch (error) {
+        console.error("❌ Error saving verified users data:", error.message);
+    }
+};
 
 (async () => {
-  // Dummy DB Object (Since real DB loading is skipped)
+  // *** ভেরিফাইড ইউজার ডেটা লোড করা হচ্ছে ***
+  global.verifiedUsers = await loadVerifiedUsers();
+  console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
+
+  // Dummy DB Object
   global.userDB = { approved: [], pending: [], banned: [] }; 
   console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
@@ -64,7 +93,6 @@ global.verifiedUsers = {};
             
             commandModules.push(commandModule);
 
-            // *** ফিক্স #১: রেজেক্স পরিবর্তন (সকল কমান্ডের আর্গুমেন্ট কাজ করার জন্য) ***
             const trigger = new RegExp(
               `^\\${global.PREFIX}(${name}|${aliases.join("|")})(\\s|$)`,
               "i"
@@ -74,7 +102,6 @@ global.verifiedUsers = {};
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
-              // Force Verification Check (for all commands except /start)
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
                  if (!global.verifiedUsers[userId]) {
                      let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
@@ -82,7 +109,6 @@ global.verifiedUsers = {};
                  }
               }
 
-              // Run the command
               try {
                 await commandModule.run(bot, msg);
               } catch (err) {
@@ -100,12 +126,9 @@ global.verifiedUsers = {};
     }
   }
 
-  // *** ফিক্স #২: গ্লোবাল মেসেজ হ্যান্ডলার যোগ (Auto Download বা handleMessage এর জন্য) ***
   bot.on('message', async (msg) => {
-      // যদি মেসেজে টেক্সট না থাকে বা সেটি কোনো কমান্ড হয় (যা bot.onText হ্যান্ডেল করবে), তবে উপেক্ষা করবে
       if (!msg.text || msg.text.startsWith(global.PREFIX)) return; 
       
-      // commandModules এর উপর লুপ চালিয়ে handleMessage ফাংশনটি কল করা
       for (const module of commandModules) {
           if (module.handleMessage) {
               try {
@@ -116,7 +139,6 @@ global.verifiedUsers = {};
           }
       }
   });
-  // *** ফিক্স #২ শেষ ***
 
   // --- Callback Listeners Initialization ---
   console.log(`\n--- Initializing Callback Listeners ---`);
