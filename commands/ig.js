@@ -2,7 +2,7 @@ const axios = require('axios');
 
 module.exports.config = {
   name: "prefix_only_post", 
-  credits: "Nayan (Adapted by Gemini)",
+  credits: "LIKHON X TISHA",
   prefix: true,
   aliases: [""], 
   description: "Random Caption With random photo triggered by prefix alone.",
