@@ -3,9 +3,9 @@ module.exports = {
     name: "start",
     credits: "LIKHON X TISHA",
     aliases: [],
-    description: "Force join REQUIRED_CHATS with inline verify button",
     prefix: true,
     permission: 0,
+    description: "Force join REQUIRED_CHATS with inline verify button",
     tags: ["core"]
   },
 
@@ -15,7 +15,7 @@ module.exports = {
     const msgId = msg.message_id;
     const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
     
-    // 💡 CONFIG থেকে বটের নাম লোড করা হচ্ছে
+    
     const botName = global.CONFIG.BOT_SETTINGS?.NAME || "Likhon Bot"; 
 
     let missingChats = [];
@@ -51,7 +51,7 @@ module.exports = {
       ]);
     }
 
-    // All joined - SEND WELCOME MESSAGE AS A REPLY
+    
     if (missingChats.length === 0) {
       if (!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
@@ -80,7 +80,7 @@ module.exports = {
 💎 **Premium Experience Activated!** Enjoy smooth, fast, and responsive commands.
 ─────────────────────────────
 
-© Developed by **Likhon Ahmed X Nayan Vai**
+© Developed by 𝐗-𝐓𝐑𝐄𝐌 𝐋𝐈𝐊𝐇𝐎𝐍 𝐀𝐇𝐌𝐄𝐃 💕
       `.trim();
 
       return bot.sendMessage(
@@ -93,13 +93,13 @@ module.exports = {
       );
     }
 
-    // Not joined - SEND VERIFICATION MESSAGE AS A REPLY
+    
     buttons.push([{ text: "✅ 𝐕𝐄𝐑𝐈𝐅𝐘", callback_data: "verify_join" }]);
 
     if (!global.verifiedUsers) global.verifiedUsers = {};
     global.verifiedUsers[userId] = false;
 
-    // 🔴 কাস্টম ওয়ার্নিং মেসেজ
+    
     const customWarningMessage = `
 ╭━━━ • ❉ • ✦ • ❉ • ━━━╮
 ┃  
@@ -114,7 +114,7 @@ module.exports = {
 
     return bot.sendMessage(
       chatId,
-      customWarningMessage, // পরিবর্তিত মেসেজ
+      customWarningMessage, 
       {
         parse_mode: "Markdown",
         reply_markup: { inline_keyboard: buttons },
@@ -132,7 +132,7 @@ module.exports = {
       const userId = query.from.id;
       const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
       
-      // 💡 CONFIG থেকে বটের নাম লোড করা হচ্ছে
+      
       const botName = global.CONFIG.BOT_SETTINGS?.NAME || "Likhon Bot"; 
 
       let missing = [];
@@ -176,7 +176,7 @@ module.exports = {
           text: "✔ Verification Successful!"
         });
 
-        // SEND WELCOME MESSAGE AFTER SUCCESSFUL VERIFICATION (using editMessageText)
+        
         const welcomeMessage = `
 ✨ **Welcome to ${botName}!** ✨
 
@@ -201,7 +201,7 @@ module.exports = {
 💎 **Premium Experience Activated!** Enjoy smooth, fast, and responsive commands.
 ─────────────────────────────
 
-© Developed by **Likhon Ahmed X Nayan Vai**
+© Developed by 𝐗-𝐓𝐑𝐄𝐌 𝐋𝐈𝐊𝐇𝐎𝐍 𝐀𝐇𝐌𝐄𝐃 💕
         `.trim();
 
         return bot.editMessageText(
@@ -215,7 +215,7 @@ module.exports = {
         );
       }
       
-      // 🔴 কাস্টম ওয়ার্নিং মেসেজ (Edit-এর জন্যও)
+      
       const customWarningMessage = `
 ╭━━━ • ❉ • ✦ • ❉ • ━━━╮
 ┃  
@@ -234,7 +234,7 @@ module.exports = {
         text: "𝐌𝐮𝐬𝐭 𝐁𝐞 𝐉𝐨𝐢𝐧 𝐎𝐮𝐫 𝐂𝐡𝐚𝐧𝐧𝐞𝐥 𝐎𝐫 𝐆𝐫𝐨𝐮𝐩𝐬 ❌"
       });
 
-      // বাটনের সাথে মেসেজ টেক্সটও এডিট করতে হবে
+    
       return bot.editMessageText(
         customWarningMessage,
         {
