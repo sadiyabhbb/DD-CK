@@ -67,7 +67,7 @@ module.exports = {
       const vidResponse = await axios.get(high, { responseType: 'stream' });
       const videoStream = vidResponse.data;
 
-      const caption = `🎬\n*Title:* ${title}`;
+      const caption = `🎬 *Title:* ${title}`;
 
       const replyMarkup = {
         reply_markup: {
