@@ -14,11 +14,13 @@ if (!global.loadedCommands) {
     global.loadedCommands = []; 
 }
 
-module.exports.run = async (bot, msg) => {
-    const chatId = msg.chat.id;
-    const messageId = msg.message_id;
+// 'msg' প্যারামিটারের নাম পরিবর্তন করে 'm' করা হয়েছে যাতে কনফ্লিক্ট না হয়
+module.exports.run = async (bot, m) => {
+    const chatId = m.chat.id;
+    const messageId = m.message_id;
     
-    const args = msg.text.split(/\s+/).slice(1);
+    // মেসেজ টেক্সট এখন m.text থেকে আসছে
+    const args = m.text.split(/\s+/).slice(1);
     const prefix = global.PREFIX;
     
     const allCommands = global.loadedCommands.sort((a, b) => a.name.localeCompare(b.name));
