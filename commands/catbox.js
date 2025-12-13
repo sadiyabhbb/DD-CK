@@ -23,7 +23,7 @@ module.exports.run = async (bot, msg) => {
     const args = msg.text.split(/\s+/).slice(1);
     
     let fileUrl, filename, mimeType;
-    let loadingMessageId; // নতুন ভেরিয়েবল: আপলোড মেসেজের ID সংরক্ষণ করার জন্য
+    let loadingMessageId; 
 
     if (msg.reply_to_message) {
         
