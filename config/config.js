@@ -2,7 +2,7 @@ module.exports = {
   BOT_TOKEN: "8561048024:AAFop0PqzACaP-LEIxYzL2uaw6YMu4OHEtQ",
 
   BOT_SETTINGS: {
-    NAME: "𝄞⋆⃝🧚‍𝐁𝐀𝐃𝐎𝐋-𝐁𝐎𝐓🧚‍⋆⃝𝄞",
+    NAME: "✨⟦ 𝐋𝐈𝐊𝐇𝐎𝐍 𝐁𝐎𝐓 ⟧✨",
     VERSION: "1.0.0",
     PREFIX: "/"
   },
