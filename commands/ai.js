@@ -3,7 +3,7 @@ const axios = require("axios");
 module.exports.config = {
   name: "ai",
   credits: "LIKHON X TISHA",
-  aliases: ["gpt"],
+  aliases: ["gpt", "gpt4"],
   prefix: true,
   permission: 0,
   description: "Chat with GPT AI using an external API.",
@@ -17,6 +17,7 @@ module.exports.run = async (bot, msg) => {
   let args = msg.text.split(/\s+/).slice(1);
   let text = args.join(" ").trim();
 
+  // 1. টেক্সট বা রিপ্লাই চেক করা
   if (!text) {
     if (msg.reply_to_message && msg.reply_to_message.text) {
         text = msg.reply_to_message.text.trim();
@@ -37,25 +38,42 @@ module.exports.run = async (bot, msg) => {
   const waitingMessageId = waitingMessage.message_id;
 
   try {
-    const apiss = await axios.get(`https://raw.githubusercontent.com/MOHAMMAD-NAYAN-07/Nayan/refs/heads/main/api.json`);
-    const apis = apiss.data;
+    // 2. API কনফিগারেশন লোড করা
+    const apiConfigUrl = `https://raw.githubusercontent.com/MOHAMMAD-NAYAN-07/Nayan/refs/heads/main/api.json`;
+    const apiConfigResponse = await axios.get(apiConfigUrl);
+    const apis = apiConfigResponse.data;
 
-    const response = await axios.get(`${apis.api}/nayan/gpt3?text=${encodeURIComponent(text)}`);
+    let baseUrl;
+    let endpoint;
+    
+    // gpt4 ইউআরএল অগ্রাধিকার দেওয়া হচ্ছে
+    if (apis.gpt4) {
+        baseUrl = apis.gpt4;
+        endpoint = "gpt4"; // gpt4 সার্ভারের জন্য এন্ডপয়েন্ট
+    } else if (apis.api) {
+        baseUrl = apis.api;
+        endpoint = "nayan/gpt3"; // gpt3 সার্ভারের জন্য এন্ডপয়েন্ট
+    } else {
+         throw new Error("API base URL is missing in the configuration.");
+    }
+
+    // 3. ফাইনাল API কল
+    const fullApiUrl = `${baseUrl}/${endpoint}?text=${encodeURIComponent(text)}`;
+    const response = await axios.get(fullApiUrl);
     const data = response.data;
     
-    if (data.status !== "Success" || !data.response) {
-      await bot.editMessageText(
-        "❌ GPT থেকে উত্তর পেতে ব্যর্থ হয়েছে। API স্ট্যাটাস ঠিক নেই।",
-        {
-            chat_id: chatId,
-            message_id: waitingMessageId
-        }
-      );
-      return;
+    // 4. সফলতার হ্যান্ডলিং
+    if (data.status !== "Success" && data.error) {
+        // যদি gpt4 বা gpt3 সার্ভার থেকে স্পষ্টভাবে error আসে
+        throw new Error(`API Error: ${data.error}`);
     }
     
-    const aiResponse = `💬 *AI Response:*\n\n${data.response}\n\n🤖 Powered by GPT`;
+    // নিশ্চিত করুন যে response ডেটা আছে (যদিও সার্ভার Success না পাঠালেও উত্তর আসতে পারে)
+    const finalResponseText = data.response || data.result || "No response text received from AI.";
+    
+    const aiResponse = `💬 *AI Response:*\n\n${finalResponseText}\n\n🤖 Powered by AI`;
 
+    // 5. মেসেজ এডিট করে উত্তর দেখানো
     await bot.editMessageText(
       aiResponse,
       {
@@ -66,10 +84,11 @@ module.exports.run = async (bot, msg) => {
     );
 
   } catch (err) {
-    console.error("❌ Error contacting GPT-3 API:", err.message);
+    console.error("❌ Error contacting AI API:", err.message);
 
+    // 6. ত্রুটি দেখালে মেসেজ এডিট করে ত্রুটি জানানো
     await bot.editMessageText(
-      "❌ GPT-3 API এর সাথে যোগাযোগ করার সময় একটি ত্রুটি হয়েছে। সার্ভার বা ইন্টারনেট সংযোগ পরীক্ষা করুন।",
+      `❌ AI এর সাথে যোগাযোগ করার সময় একটি ত্রুটি হয়েছে বা সার্ভার থেকে ভুল ডেটা এসেছে।\nত্রুটি: ${err.message}`,
       {
         chat_id: chatId,
         message_id: waitingMessageId
