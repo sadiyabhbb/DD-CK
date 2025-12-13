@@ -12,8 +12,11 @@ module.exports = {
   run: async (bot, msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
-    const msgId = msg.message_id; // Added to get the original message ID for reply
+    const msgId = msg.message_id;
     const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
+    
+    // 💡 CONFIG থেকে বটের নাম লোড করা হচ্ছে
+    const botName = global.CONFIG.BOT_SETTINGS?.NAME || "Likhon Bot"; 
 
     let missingChats = [];
     let buttons = [];
@@ -54,7 +57,7 @@ module.exports = {
       global.verifiedUsers[userId] = true;
 
       const welcomeMessage = `
-✨ **Welcome to Likhon Bot!** ✨
+✨ **Welcome to ${botName}!** ✨
 
 👋 Hello, **${msg.from.first_name || "User"}**
 
@@ -85,7 +88,7 @@ module.exports = {
         welcomeMessage,
         {
           parse_mode: "Markdown",
-          reply_to_message_id: msgId // <-- This ensures it replies to the /start message
+          reply_to_message_id: msgId
         }
       );
     }
@@ -103,12 +106,11 @@ module.exports = {
       {
         parse_mode: "Markdown",
         reply_markup: { inline_keyboard: buttons },
-        reply_to_message_id: msgId // <-- This ensures it replies to the /start message
+        reply_to_message_id: msgId
       }
     );
   },
 
-  // initCallback remains unchanged as it handles button clicks, not the initial /start reply
   initCallback: (bot) => {
     bot.on("callback_query", async (query) => {
       if (query.data !== "verify_join") return;
@@ -117,6 +119,9 @@ module.exports = {
       const msgId = query.message.message_id;
       const userId = query.from.id;
       const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
+      
+      // 💡 CONFIG থেকে বটের নাম লোড করা হচ্ছে
+      const botName = global.CONFIG.BOT_SETTINGS?.NAME || "Likhon Bot"; 
 
       let missing = [];
       let buttons = [];
@@ -161,7 +166,7 @@ module.exports = {
 
         // SEND WELCOME MESSAGE AFTER SUCCESSFUL VERIFICATION (using editMessageText)
         const welcomeMessage = `
-✨ **Welcome to Likhon Bot!** ✨
+✨ **Welcome to ${botName}!** ✨
 
 👋 Hello, **${query.from.first_name || "User"}**
 
