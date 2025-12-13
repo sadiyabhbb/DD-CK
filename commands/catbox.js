@@ -4,7 +4,7 @@ const path = require("path");
 
 module.exports.config = {
     name: "catbox",
-    credits: "LIKHON AHMED (Adapted for Telegram by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["cb", "cat"],
     prefix: true,
     permission: 0, 
@@ -66,9 +66,9 @@ module.exports.run = async (bot, msg) => {
     try {
         const escapedFilename = escapeMarkdown(filename);
         
-        // 1. আপলোডিং মেসেজটি পাঠানো এবং ID সংরক্ষণ করা
+        
         const loadingMsg = await bot.sendMessage(chatId, `⏳ Uploading **${escapedFilename}** to Catbox.moe...`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
-        loadingMessageId = loadingMsg.message_id; // ID সংরক্ষণ
+        loadingMessageId = loadingMsg.message_id; 
 
         const fileResponse = await axios.get(fileUrl, { responseType: "arraybuffer" });
         const fileData = fileResponse.data;
@@ -84,7 +84,7 @@ module.exports.run = async (bot, msg) => {
 
         const responseText = res.data.trim();
 
-        // 2. সফল বা ব্যর্থ হওয়ার আগে লোডিং মেসেজটি মুছে ফেলা
+        
         if (loadingMessageId) {
             await bot.deleteMessage(chatId, loadingMessageId).catch(err => console.error("Failed to delete loading message:", err.message));
         }
@@ -97,7 +97,7 @@ module.exports.run = async (bot, msg) => {
         }
 
     } catch (err) {
-        // 3. ত্রুটি হলেও লোডিং মেসেজটি মুছে ফেলা
+        
         if (loadingMessageId) {
             await bot.deleteMessage(chatId, loadingMessageId).catch(deleteErr => console.error("Failed to delete loading message on error:", deleteErr.message));
         }
