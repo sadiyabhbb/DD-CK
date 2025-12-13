@@ -1,4 +1,4 @@
-module.exports = {
+Module.exports = {
   config: {
     name: "start",
     credits: "LIKHON X TISHA",
@@ -55,6 +55,12 @@ module.exports = {
     if (missingChats.length === 0) {
       if (!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
+      
+      // *** JSON সেভ লজিক যুক্ত করা হয়েছে (কমান্ড রান করার সময়) ***
+      if (global.saveVerifiedUsers) {
+        await global.saveVerifiedUsers(); 
+      }
+      // ********************************************************
 
       const welcomeMessage = `
 ✨ **Welcome to ${botName}!** ✨
@@ -171,6 +177,12 @@ module.exports = {
       if (missing.length === 0) {
         if (!global.verifiedUsers) global.verifiedUsers = {};
         global.verifiedUsers[userId] = true;
+        
+        // *** JSON সেভ লজিক যুক্ত করা হয়েছে (কলব্যাক সফল হওয়ার পর) ***
+        if (global.saveVerifiedUsers) {
+          await global.saveVerifiedUsers(); 
+        }
+        // **********************************************************
 
         await bot.answerCallbackQuery(query.id, {
           text: "✔ Verification Successful!"
