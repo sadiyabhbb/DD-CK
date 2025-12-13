@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 
+// Configuration Loading
 let config = {};
 try {
   const configPath = path.join(__dirname, 'config', 'config.js');
@@ -17,6 +18,7 @@ try {
   process.exit(1);
 }
 
+// Global Variables Setup
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
@@ -28,9 +30,11 @@ global.loadedCommands = [];
 global.verifiedUsers = {};
 
 (async () => {
+  // Dummy DB Object (Since real DB loading is skipped)
   global.userDB = { approved: [], pending: [], banned: [] }; 
   console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
+  // Init bot
   const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true,
     fileDownloadOptions: {
@@ -42,6 +46,7 @@ global.verifiedUsers = {};
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
 
+  // --- Command Loading and Prefix Listener ---
   const commandsPath = path.join(__dirname, 'commands');
   const commandModules = []; 
 
@@ -59,6 +64,7 @@ global.verifiedUsers = {};
             
             commandModules.push(commandModule);
 
+            // *** ফিক্স #১: রেজেক্স পরিবর্তন (সকল কমান্ডের আর্গুমেন্ট কাজ করার জন্য) ***
             const trigger = new RegExp(
               `^\\${global.PREFIX}(${name}|${aliases.join("|")})(\\s|$)`,
               "i"
@@ -68,6 +74,7 @@ global.verifiedUsers = {};
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
+              // Force Verification Check (for all commands except /start)
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
                  if (!global.verifiedUsers[userId]) {
                      let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
@@ -75,6 +82,7 @@ global.verifiedUsers = {};
                  }
               }
 
+              // Run the command
               try {
                 await commandModule.run(bot, msg);
               } catch (err) {
@@ -92,6 +100,25 @@ global.verifiedUsers = {};
     }
   }
 
+  // *** ফিক্স #২: গ্লোবাল মেসেজ হ্যান্ডলার যোগ (Auto Download বা handleMessage এর জন্য) ***
+  bot.on('message', async (msg) => {
+      // যদি মেসেজে টেক্সট না থাকে বা সেটি কোনো কমান্ড হয় (যা bot.onText হ্যান্ডেল করবে), তবে উপেক্ষা করবে
+      if (!msg.text || msg.text.startsWith(global.PREFIX)) return; 
+      
+      // commandModules এর উপর লুপ চালিয়ে handleMessage ফাংশনটি কল করা
+      for (const module of commandModules) {
+          if (module.handleMessage) {
+              try {
+                  await module.handleMessage(bot, msg);
+              } catch (err) {
+                  console.error(`❌ handleMessage Runtime Error (${module.config.name}):`, err.message);
+              }
+          }
+      }
+  });
+  // *** ফিক্স #২ শেষ ***
+
+  // --- Callback Listeners Initialization ---
   console.log(`\n--- Initializing Callback Listeners ---`);
   for (const module of commandModules) {
       if (module.initCallback) {
@@ -102,6 +129,8 @@ global.verifiedUsers = {};
   console.log(`---------------------------------`);
   console.log(`✅ Successfully loaded ${global.loadedCommands.length} command(s).`);
 
+
+  // --- Express server to keep the bot alive ---
   app.listen(port, () => {
     console.log(`🚀 Bot server running via polling on port ${port}`);
     console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
