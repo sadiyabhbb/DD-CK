@@ -110,7 +110,7 @@ module.exports = {
 
         buttons.push([
           {
-            text: (joined ? "✅ " : "❌ ") + chat.name,
+            text: (joined ? "❌ " : "✅ ") + chat.name,
             url: chat.username
               ? `https://t.me/${chat.username}`
               : `https://t.me/c/${String(chat.id).replace("-100", "")}`
