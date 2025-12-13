@@ -1,9 +1,8 @@
-const TelegramBot = require('node-telegram-bot-api');
+Const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
 
-// Configuration Loading
 let config = {};
 try {
   const configPath = path.join(__dirname, 'config', 'config.js');
@@ -18,7 +17,6 @@ try {
   process.exit(1);
 }
 
-// Global Variables Setup
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
@@ -27,14 +25,12 @@ global.activeEmails = {};
 global.CONFIG = config;
 global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
 global.loadedCommands = [];
-global.verifiedUsers = {}; // Stores verified users: { userId: true }
+global.verifiedUsers = {};
 
 (async () => {
-  // Dummy DB Object (Since real DB loading is skipped)
   global.userDB = { approved: [], pending: [], banned: [] }; 
   console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
-  // Init bot
   const bot = new TelegramBot(config.BOT_TOKEN, {
     polling: true,
     fileDownloadOptions: {
@@ -46,7 +42,6 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
 
-  // --- Command Loading and Prefix Listener ---
   const commandsPath = path.join(__dirname, 'commands');
   const commandModules = []; 
 
@@ -64,9 +59,8 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
             
             commandModules.push(commandModule);
 
-            // Prefix locked trigger for text commands
             const trigger = new RegExp(
-              `^\\${global.PREFIX}(${name}|${aliases.join("|")})$`,
+              `^\\${global.PREFIX}(${name}|${aliases.join("|")})(\\s|$)`,
               "i"
             );
 
@@ -74,7 +68,6 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
               const chatId = msg.chat.id;
               const userId = msg.from.id;
 
-              // Force Verification Check (for all commands except /start)
               if (name !== "start" && Array.isArray(config.REQUIRED_CHATS) && config.REQUIRED_CHATS.length > 0) {
                  if (!global.verifiedUsers[userId]) {
                      let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
@@ -82,7 +75,6 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
                  }
               }
 
-              // Run the command
               try {
                 await commandModule.run(bot, msg);
               } catch (err) {
@@ -100,8 +92,6 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
     }
   }
 
-  // --- Callback Listeners Initialization ---
-  // This is crucial for button responses (like 'Verify')
   console.log(`\n--- Initializing Callback Listeners ---`);
   for (const module of commandModules) {
       if (module.initCallback) {
@@ -112,8 +102,6 @@ global.verifiedUsers = {}; // Stores verified users: { userId: true }
   console.log(`---------------------------------`);
   console.log(`✅ Successfully loaded ${global.loadedCommands.length} command(s).`);
 
-
-  // --- Express server to keep the bot alive ---
   app.listen(port, () => {
     console.log(`🚀 Bot server running via polling on port ${port}`);
     console.log(`🔐 Command Prefix locked to: "${global.PREFIX}"`);
