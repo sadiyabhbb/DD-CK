@@ -4,7 +4,7 @@ const axios = require('axios');
 
 module.exports.config = {
     name: "cmd",
-    credits: "LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["command", "c"],
     prefix: true,
     permission: 2, 
@@ -15,7 +15,7 @@ module.exports.config = {
 const pendingConfirmation = new Map();
 const COMMANDS_DIR = path.join(process.cwd(), 'commands');
 
-// index.js থেকে গ্লোবাল ফাংশনগুলি নেওয়া
+
 const loadCommand = global.loadCommand;
 const unloadCommand = global.unloadCommand;
 
@@ -28,7 +28,7 @@ module.exports.run = async (bot, msg) => {
     
     const botOwnerId = global.CONFIG?.BOT_SETTINGS?.ADMINS?.[0];
 
-    // নিরাপত্তা চেক
+    
     if (botOwnerId !== senderId.toString()) {
         return bot.sendMessage(chatId, `❌ Permission denied. Owner only command.`, { reply_to_message_id: messageId });
     }
@@ -36,7 +36,7 @@ module.exports.run = async (bot, msg) => {
     const subCommand = args[0] ? args[0].toLowerCase() : null;
     const target = args[1];
     
-    // --- রিপ্লাই ম্যানেজমেন্ট: কনফার্মেশন ---
+
     if (msg.reply_to_message) {
         const key = `${chatId}-${msg.reply_to_message.message_id}`;
         if (pendingConfirmation.has(key)) {
@@ -59,7 +59,7 @@ module.exports.run = async (bot, msg) => {
         }
     }
 
-    // --- মেইন কমান্ড লজিক ---
+    
 
     if (!subCommand) {
         const usage = `
@@ -74,7 +74,7 @@ module.exports.run = async (bot, msg) => {
         return bot.sendMessage(chatId, usage, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
     }
 
-    // --- SUBCOMMAND: INSTALL ---
+    
     if (subCommand === 'install') {
         if (!target) {
             return bot.sendMessage(chatId, `⚠️ Usage: \`${global.PREFIX}cmd install <filename.js> [Code]\` or reply to a file.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -84,7 +84,7 @@ module.exports.run = async (bot, msg) => {
         const filePath = path.join(COMMANDS_DIR, targetFilename);
         const isUpdate = await fileExists(filePath);
         
-        // 1. DIRECT CODE INSTALL
+        
         if (args.length > 2) {
             const fileCode = args.slice(2).join(' ').trim();
             if (!fileCode) {
@@ -105,7 +105,7 @@ module.exports.run = async (bot, msg) => {
             return handleInstallCode(bot, chatId, messageId, targetFilename, fileCode, false);
         } 
         
-        // 2. DOCUMENT REPLY INSTALL (If no code is provided, check for reply)
+        
         else if (msg.reply_to_message && msg.reply_to_message.document) {
             const fileDoc = msg.reply_to_message.document;
             const fileUrl = await bot.getFileLink(fileDoc.file_id);
@@ -127,7 +127,7 @@ module.exports.run = async (bot, msg) => {
         return bot.sendMessage(chatId, `⚠️ Please provide the command code or reply to a \`.js\` file.`, { reply_to_message_id: messageId });
     }
     
-    // --- SUBCOMMAND: UNINSTALL ---
+    
     if (subCommand === 'uninstall') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd uninstall <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -139,17 +139,17 @@ module.exports.run = async (bot, msg) => {
         try {
             const filePath = path.join(COMMANDS_DIR, filename);
             
-            // 1. কমান্ড ফাইল আছে কিনা চেক করা
+            
             if (!await fileExists(filePath)) {
                 return bot.sendMessage(chatId, `❌ Command file \`${filename}\` not found in commands directory.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
             }
 
-            // 2. কমান্ডটিকে আনলোড করা
+            
             if (global.COMMANDS[commandName]) {
                 unloadCommand(commandName);
             }
 
-            // 3. ফাইলটি ফিজিক্যালি ডিলিট করা
+            
             await fs.unlink(filePath);
 
             return bot.sendMessage(chatId, `🗑️ Command \`${target}\` unloaded and file \`${filename}\` **deleted** successfully.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -160,7 +160,7 @@ module.exports.run = async (bot, msg) => {
         }
     }
     
-    // --- SUBCOMMAND: LOAD ---
+    
     if (subCommand === 'load') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd load <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -168,7 +168,7 @@ module.exports.run = async (bot, msg) => {
         return handleLoad(bot, chatId, messageId, target);
     }
 
-    // --- SUBCOMMAND: UNLOAD ---
+    
     if (subCommand === 'unload') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd unload <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -176,7 +176,7 @@ module.exports.run = async (bot, msg) => {
         return handleUnload(bot, chatId, messageId, target);
     }
 
-    // --- SUBCOMMAND: LOADALL ---
+
     if (subCommand === 'loadall') {
         return handleLoadAll(bot, chatId, messageId);
     }
@@ -184,11 +184,7 @@ module.exports.run = async (bot, msg) => {
     return bot.sendMessage(chatId, `❌ Unknown sub-command: \`${subCommand}\`.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
 };
 
-// --- INSTALLATION HANDLERS ---
 
-/**
- * URL থেকে ফাইল ডাউনলোড করে ইনস্টল এবং লোড করার লজিক
- */
 async function handleInstallURL(bot, chatId, replyToMessageId, targetFilename, fileUrl, isUpdate) {
     const filePath = path.join(COMMANDS_DIR, targetFilename);
     const commandName = targetFilename.replace('.js', '');
@@ -217,9 +213,7 @@ async function handleInstallURL(bot, chatId, replyToMessageId, targetFilename, f
     }
 }
 
-/**
- * কোড ইনপুট থেকে ফাইল তৈরি করে ইনস্টল এবং লোড করার লজিক
- */
+
 async function handleInstallCode(bot, chatId, replyToMessageId, targetFilename, fileCode, isUpdate) {
     const filePath = path.join(COMMANDS_DIR, targetFilename);
     const commandName = targetFilename.replace('.js', '');
@@ -244,8 +238,6 @@ async function handleInstallCode(bot, chatId, replyToMessageId, targetFilename, 
         return bot.sendMessage(chatId, `❌ Failed to install \`${commandName}\`. Error: ${e.message}`, { reply_to_message_id: replyToMessageId, parse_mode: 'Markdown' });
     }
 }
-
-// --- LOAD/UNLOAD HANDLERS ---
 
 async function handleLoad(bot, chatId, messageId, target) {
     const filename = target.endsWith('.js') ? target : `${target}.js`;
@@ -318,7 +310,7 @@ Total command files scanned: ${files.length}
 }
 
 
-// --- UTILITIES ---
+
 
 async function fileExists(filePath) {
     try {
