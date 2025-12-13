@@ -28,9 +28,7 @@ module.exports = {
         ) {
           joined = true;
         }
-      } catch (e) {
-        joined = false;
-      }
+      } catch {}
 
       if (!joined) {
         missingChats.push(chat);
@@ -39,12 +37,11 @@ module.exports = {
       buttons.push([
         {
           text: (joined ? "✅ " : "❌ ") + chat.name,
-          url: `https://t.me/c/${String(chat.id).replace("-100", "")}`
+          url: `https://t.me/${chat.username}`
         }
       ]);
     }
 
-    // All joined
     if (missingChats.length === 0) {
       if (!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
@@ -56,7 +53,6 @@ module.exports = {
       );
     }
 
-    // Not joined
     buttons.push([{ text: "✅ VERIFY", callback_data: "verify_join" }]);
 
     if (!global.verifiedUsers) global.verifiedUsers = {};
@@ -64,8 +60,7 @@ module.exports = {
 
     return bot.sendMessage(
       chatId,
-      "⚠️ **আপনাকে নিচের group/channel গুলোতে join করতে হবে:**\n\n"
-      + "Join করার পর **VERIFY** বাটনে চাপ দিন 👇",
+      "⚠️ **আপনাকে নিচের group/channel গুলোতে join করতে হবে:**\n\nJoin করার পর **VERIFY** বাটনে চাপ দিন 👇",
       {
         parse_mode: "Markdown",
         reply_markup: { inline_keyboard: buttons }
@@ -82,7 +77,7 @@ module.exports = {
       const userId = query.from.id;
       const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
 
-      let missing = [];
+      let missingChats = [];
       let buttons = [];
 
       for (const chat of requiredChats) {
@@ -97,29 +92,25 @@ module.exports = {
           ) {
             joined = true;
           }
-        } catch (e) {
-          joined = false;
-        }
+        } catch {}
 
         if (!joined) {
-          missing.push(chat);
+          missingChats.push(chat);
         }
 
         buttons.push([
           {
             text: (joined ? "✅ " : "❌ ") + chat.name,
-            url: `https://t.me/c/${String(chat.id).replace("-100", "")}`
+            url: `https://t.me/${chat.username}`
           }
         ]);
       }
 
-      if (missing.length === 0) {
+      if (missingChats.length === 0) {
         if (!global.verifiedUsers) global.verifiedUsers = {};
         global.verifiedUsers[userId] = true;
 
-        await bot.answerCallbackQuery(query.id, {
-          text: "✔ Verification Successful!"
-        });
+        await bot.answerCallbackQuery(query.id, { text: "✔ Verification Successful!" });
 
         return bot.editMessageText(
           "🎉 **Verification Successful!**\n\nআপনি সব group/channel এ join করেছেন ✅",
