@@ -12,7 +12,6 @@ try {
   const configPath = path.join(__dirname, 'config', 'config.js');
   if (fs.existsSync(configPath)) {
     config = require(configPath);
-    console.log('✅ Config loaded from config/config.js');
   } else {
     throw new Error('config/config.js file not found. Please create it.');
   }
@@ -32,8 +31,6 @@ global.PREFIX = config.BOT_SETTINGS.PREFIX || "/";
 global.COMMANDS = {}; 
 global.ALIASES = {}; 
 global.BOT_LISTENERS = []; 
-
-// --- গ্লোবাল কমান্ড লোড/আনলোড ফাংশন ---
 
 global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
@@ -65,7 +62,9 @@ global.loadCommand = function(commandName) {
          });
     }
 
-    // Callback Initialization (নতুন লোড হওয়া মডিউলের জন্য)
+    const commandConfigName = commandModule.config.name || commandName;
+    console.log(`[ BOT ] cmd Loaded → Name: ${commandConfigName} | File: ${commandName}.js`);
+
     if (global.bot && commandModule.initCallback) {
         commandModule.initCallback(global.bot);
     }
@@ -89,8 +88,6 @@ global.unloadCommand = function(commandName) {
     delete global.COMMANDS[commandName];
 };
 
-
-// --- ডেটা লোডিং ফাংশন ---
 
 async function loadVerifiedUsers() {
     try {
@@ -132,8 +129,27 @@ global.saveVerifiedUsers = async function() {
     console.error("❌ Polling error:", error.response?.data || error.message || error);
   });
   
-  // --- Initial Command Loading ---
+  let botUsername = "N/A";
+  let botName = "N/A";
+  let botId = config.BOT_TOKEN.split(':')[0]; 
+  
+  try {
+      const me = await global.bot.getMe();
+      botUsername = me.username || "N/A";
+      botName = me.first_name || "N/A";
+      botName = global.CONFIG.BOT_SETTINGS.BOT_NAME || botName; 
+  } catch (err) {
+      console.error("❌ Failed to fetch bot info (getMe):", err.message);
+  }
+
   let initialLoadCount = 0;
+  
+  console.log(`\n╭─────────COMMANDS─────────╮`);
+  console.log(`   │                          │`);
+  console.log(`   │   Deploying all COMMANDS   │`);
+  console.log(`   │                          │`);
+  console.log(`   ╰──────────────────────────╯`);
+
   if (fs.existsSync(commandsPath)) {
     const files = fs.readdirSync(commandsPath);
 
@@ -150,11 +166,9 @@ global.saveVerifiedUsers = async function() {
     }
   }
 
-  // --- ইউনিভার্সাল মেসেজ হ্যান্ডলার (সমস্ত কমান্ডের জন্য) ---
   global.bot.on('message', async (msg) => {
       const text = msg.text;
       
-      // 1. কমান্ড চেক করা
       if (text && text.startsWith(global.PREFIX)) {
         const args = text.slice(global.PREFIX.length).trim().split(/\s+/);
         const commandNameOrAlias = args.shift().toLowerCase();
@@ -165,7 +179,6 @@ global.saveVerifiedUsers = async function() {
         if (commandModule && commandModule.run) {
             const userId = msg.from.id;
             
-            // Authorization/Verified User Check
             if (commandModule.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
                 if (!global.verifiedUsers[userId]) {
                     let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
@@ -174,16 +187,14 @@ global.saveVerifiedUsers = async function() {
             }
             
             try {
-                // Run the command
                 await commandModule.run(global.bot, msg);
             } catch (err) {
                 console.error(`❌ Command Runtime Error (${actualCommandName}):`, err.message);
             }
-            return; // কমান্ড এক্সিকিউট হলে handleMessage লজিক এড়িয়ে যাওয়া
+            return; 
         }
       }
       
-      // 2. handleMessage লজিক (যদি কমান্ড না হয়)
       if (text) {
           for (const commandName in global.COMMANDS) {
               const module = global.COMMANDS[commandName];
@@ -197,8 +208,33 @@ global.saveVerifiedUsers = async function() {
           }
       }
   });
+  
+  const adminInfo = `
+╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
+  │                                                                         │
+  │    Facebook: ${global.CONFIG.BOT_SETTINGS.ADMIN_FACEBOOK_URL || "N/A"}    │
+  │                       WhatsApp: ${global.CONFIG.BOT_SETTINGS.ADMIN_WHATSAPP || "N/A"}                    │
+  │                     Credit: ${global.CONFIG.BOT_SETTINGS.CREDIT || "Developed by Mohammad Nayan"}                 │
+  │       Notification: This bot is protected and monitored by the admin.   │
+  │                             Version : ${global.CONFIG.BOT_SETTINGS.VERSION || "2.0.1.9"}                          │
+  │                                                                         │
+  ╰─────────────────────────────────────────────────────────────────────────╯
+  `;
+  const botInfo = `
+╭──────────────── BOT INFO ─────────────────╮
+   │                                           │
+   │      Login: Successfully Login Done       │
+   │       Bot User Name: @${botUsername}   │
+   │         Bot Name: ${botName}      │
+   │            Bot User ID: ${botId}        │
+   │                                           │
+   ╰───────────────────────────────────────────╯
+  `;
 
-  console.log(`✅ Successfully loaded ${initialLoadCount} command(s).`);
+  console.log(`\n✅ Successfully loaded ${initialLoadCount} command(s).`);
+  console.log(adminInfo);
+  console.log(botInfo);
+
 
   app.listen(port, () => {
     console.log(`🚀 Bot server running via polling on port ${port}`);
