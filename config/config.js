@@ -4,7 +4,8 @@ module.exports = {
   BOT_SETTINGS: {
     NAME: "✨⟦ 𝐋𝐈𝐊𝐇𝐎𝐍 𝐁𝐎𝐓 ⟧✨",
     VERSION: "1.0.0",
-    PREFIX: "/"
+    PREFIX: "/",
+    ADMINS: ["8287206585"] 
   },
 
   OWNER: {
