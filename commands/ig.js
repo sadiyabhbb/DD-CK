@@ -1,10 +1,10 @@
 const axios = require('axios');
 
 module.exports.config = {
-  name: "prefix_only_post", // কমান্ডের একটি স্বতন্ত্র নাম
+  name: "prefix_only_post", 
   credits: "Nayan (Adapted by Gemini)",
   prefix: true,
-  aliases: [""], // <<< এইটিই মূল ফিক্স: এটি নিশ্চিত করে যে শুধুমাত্র প্রিফিক্স টাইপ করলেই এই কমান্ডটি কার্যকর হবে।
+  aliases: [""], 
   description: "Random Caption With random photo triggered by prefix alone.",
   tags: ["General"],
   permission: 0 
