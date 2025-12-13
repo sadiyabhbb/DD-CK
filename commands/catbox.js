@@ -12,6 +12,13 @@ module.exports.config = {
     tags: ["utility"]
 };
 
+// Markdown বিশেষ অক্ষর Escape করার জন্য ফাংশন
+function escapeMarkdown(text) {
+    if (!text) return text;
+    // Telegram V2 Markdown special characters: _, *, [, ], (, ), ~, `, >, #, +, -, =, |, {, }, ., !
+    return text.replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1');
+}
+
 module.exports.run = async (bot, msg) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
@@ -58,7 +65,10 @@ module.exports.run = async (bot, msg) => {
     }
 
     try {
-        await bot.sendMessage(chatId, `⏳ Uploading **${filename}** to Catbox.moe...`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
+        // filename Escape করা
+        const escapedFilename = escapeMarkdown(filename);
+        
+        await bot.sendMessage(chatId, `⏳ Uploading **${escapedFilename}** to Catbox.moe...`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         
         const fileResponse = await axios.get(fileUrl, { responseType: "arraybuffer" });
         const fileData = fileResponse.data;
@@ -77,7 +87,9 @@ module.exports.run = async (bot, msg) => {
         if (responseText.startsWith("http")) {
             return bot.sendMessage(chatId, `✅ Upload successful!\n\n🔗 Catbox Link:\n${responseText}`, { reply_to_message_id: messageId });
         } else {
-            return bot.sendMessage(chatId, `⚠ Upload failed: ${responseText}`, { reply_to_message_id: messageId });
+            // responseText Escape করা
+            const escapedResponse = escapeMarkdown(responseText);
+            return bot.sendMessage(chatId, `⚠ Upload failed: ${escapedResponse}`, { reply_to_message_id: messageId });
         }
 
     } catch (err) {
