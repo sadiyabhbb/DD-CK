@@ -12,10 +12,8 @@ module.exports.config = {
     tags: ["utility"]
 };
 
-// Markdown বিশেষ অক্ষর Escape করার জন্য ফাংশন
 function escapeMarkdown(text) {
     if (!text) return text;
-    // Telegram V2 Markdown special characters: _, *, [, ], (, ), ~, `, >, #, +, -, =, |, {, }, ., !
     return text.replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1');
 }
 
@@ -25,6 +23,7 @@ module.exports.run = async (bot, msg) => {
     const args = msg.text.split(/\s+/).slice(1);
     
     let fileUrl, filename, mimeType;
+    let loadingMessageId; // নতুন ভেরিয়েবল: আপলোড মেসেজের ID সংরক্ষণ করার জন্য
 
     if (msg.reply_to_message) {
         
@@ -65,11 +64,12 @@ module.exports.run = async (bot, msg) => {
     }
 
     try {
-        // filename Escape করা
         const escapedFilename = escapeMarkdown(filename);
         
-        await bot.sendMessage(chatId, `⏳ Uploading **${escapedFilename}** to Catbox.moe...`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
-        
+        // 1. আপলোডিং মেসেজটি পাঠানো এবং ID সংরক্ষণ করা
+        const loadingMsg = await bot.sendMessage(chatId, `⏳ Uploading **${escapedFilename}** to Catbox.moe...`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
+        loadingMessageId = loadingMsg.message_id; // ID সংরক্ষণ
+
         const fileResponse = await axios.get(fileUrl, { responseType: "arraybuffer" });
         const fileData = fileResponse.data;
 
@@ -84,15 +84,24 @@ module.exports.run = async (bot, msg) => {
 
         const responseText = res.data.trim();
 
+        // 2. সফল বা ব্যর্থ হওয়ার আগে লোডিং মেসেজটি মুছে ফেলা
+        if (loadingMessageId) {
+            await bot.deleteMessage(chatId, loadingMessageId).catch(err => console.error("Failed to delete loading message:", err.message));
+        }
+
         if (responseText.startsWith("http")) {
             return bot.sendMessage(chatId, `✅ Upload successful!\n\n🔗 Catbox Link:\n${responseText}`, { reply_to_message_id: messageId });
         } else {
-            // responseText Escape করা
             const escapedResponse = escapeMarkdown(responseText);
             return bot.sendMessage(chatId, `⚠ Upload failed: ${escapedResponse}`, { reply_to_message_id: messageId });
         }
 
     } catch (err) {
+        // 3. ত্রুটি হলেও লোডিং মেসেজটি মুছে ফেলা
+        if (loadingMessageId) {
+            await bot.deleteMessage(chatId, loadingMessageId).catch(deleteErr => console.error("Failed to delete loading message on error:", deleteErr.message));
+        }
+        
         console.error("Catbox upload error:", err.message);
         return bot.sendMessage(chatId, `❌ Error during upload: ${err.message}`, { reply_to_message_id: messageId });
     }
