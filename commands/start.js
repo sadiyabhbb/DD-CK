@@ -1,4 +1,4 @@
-module.exports = {
+Module.exports = {
   config: {
     name: "start",
     credits: "LIKHON X TISHA",
@@ -12,6 +12,7 @@ module.exports = {
   run: async (bot, msg) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
+    const msgId = msg.message_id; // Added to get the original message ID for reply
     const requiredChats = global.CONFIG.REQUIRED_CHATS || [];
 
     let missingChats = [];
@@ -47,19 +48,49 @@ module.exports = {
       ]);
     }
 
-    // All joined
+    // All joined - SEND WELCOME MESSAGE AS A REPLY
     if (missingChats.length === 0) {
       if (!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
 
+      const welcomeMessage = `
+✨ **Welcome to Likhon Bot!** ✨
+
+👋 Hello, **${msg.from.first_name || "User"}**
+
+💡 I am your all-in-one assistant, ready to help you with:
+─────────────────────────────
+📌 **Features:**
+• 🔒 Chat Lock System → \`/lock\`
+• 🤖 AI Chat (Gemini) → \`/gemini\`
+• 🖼 AI Image Tools → \`/img\`
+• 🤖 AI Chat (GPT) → \`/ai\`
+• ⚙️ Help See All cmnd → \`/help\`
+─────────────────────────────
+
+🚀 **Quick Tips:**
+• Type \`/help\` to see all commands.
+• Reply to images with \`/img\` to use AI tools.
+• Use \`/lock\` to manage chat locks.
+• Explore Gemini AI with \`/gemini\`.
+
+💎 **Premium Experience Activated!** Enjoy smooth, fast, and responsive commands.
+─────────────────────────────
+
+© Developed by **Likhon Ahmed X Nayan Vai**
+      `.trim();
+
       return bot.sendMessage(
         chatId,
-        "🎉 **অভিনন্দন!**\n\nআপনি সব required group/channel এ join করেছেন। এখন bot ব্যবহার করতে পারবেন ✅",
-        { parse_mode: "Markdown" }
+        welcomeMessage,
+        {
+          parse_mode: "Markdown",
+          reply_to_message_id: msgId // <-- This ensures it replies to the /start message
+        }
       );
     }
 
-    // Not joined
+    // Not joined - SEND VERIFICATION MESSAGE AS A REPLY
     buttons.push([{ text: "✅ 𝐕𝐄𝐑𝐈𝐅𝐘", callback_data: "verify_join" }]);
 
     if (!global.verifiedUsers) global.verifiedUsers = {};
@@ -71,11 +102,13 @@ module.exports = {
       + "Join করার পর **VERIFY** বাটনে চাপ দিন 👇",
       {
         parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: buttons }
+        reply_markup: { inline_keyboard: buttons },
+        reply_to_message_id: msgId // <-- This ensures it replies to the /start message
       }
     );
   },
 
+  // initCallback remains unchanged as it handles button clicks, not the initial /start reply
   initCallback: (bot) => {
     bot.on("callback_query", async (query) => {
       if (query.data !== "verify_join") return;
@@ -126,8 +159,36 @@ module.exports = {
           text: "✔ Verification Successful!"
         });
 
+        // SEND WELCOME MESSAGE AFTER SUCCESSFUL VERIFICATION (using editMessageText)
+        const welcomeMessage = `
+✨ **Welcome to Likhon Bot!** ✨
+
+👋 Hello, **${query.from.first_name || "User"}**
+
+💡 I am your all-in-one assistant, ready to help you with:
+─────────────────────────────
+📌 **Features:**
+• 🔒 Chat Lock System → \`/lock\`
+• 🤖 AI Chat (Gemini) → \`/gemini\`
+• 🖼 AI Image Tools → \`/img\`
+• 🤖 AI Chat (GPT) → \`/ai\`
+• ⚙️ Help See All cmnd → \`/help\`
+─────────────────────────────
+
+🚀 **Quick Tips:**
+• Type \`/help\` to see all commands.
+• Reply to images with \`/img\` to use AI tools.
+• Use \`/lock\` to manage chat locks.
+• Explore Gemini AI with \`/gemini\`.
+
+💎 **Premium Experience Activated!** Enjoy smooth, fast, and responsive commands.
+─────────────────────────────
+
+© Developed by **Likhon Ahmed X Nayan Vai**
+        `.trim();
+
         return bot.editMessageText(
-          "🎉 **𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐓𝐈𝐎𝐍 𝐒𝐔𝐂𝐂𝐄𝐒𝐒𝐅𝐔𝐋!**\n\nআপনি সব group/channel এ join করেছেন ✅",
+          welcomeMessage,
           {
             chat_id: chatId,
             message_id: msgId,
