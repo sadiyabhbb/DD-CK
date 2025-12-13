@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "file",
-    credits: "LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["getcmd"],
     prefix: true,
     permission: 2, 
