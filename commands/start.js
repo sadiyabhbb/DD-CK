@@ -1,6 +1,7 @@
 module.exports = {
   config: {
     name: "start",
+    credits: "LIKHON X TISHA",
     aliases: [],
     description: "Force join REQUIRED_CHATS with inline verify button",
     prefix: true,
