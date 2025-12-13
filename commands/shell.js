@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "shell",
-    credits: "LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON AHMED",
     aliases: ["cat", "readfile"],
     prefix: true,
     permission: 2, 
