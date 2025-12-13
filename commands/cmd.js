@@ -15,8 +15,7 @@ module.exports.config = {
 const pendingConfirmation = new Map();
 const COMMANDS_DIR = path.join(process.cwd(), 'commands');
 
-// --- Core Utility Functions for Command Management (Re-defined locally for safety) ---
-// (These functions must match the structure in index.js)
+// index.js থেকে গ্লোবাল ফাংশনগুলি নেওয়া
 const loadCommand = global.loadCommand;
 const unloadCommand = global.unloadCommand;
 
@@ -29,6 +28,7 @@ module.exports.run = async (bot, msg) => {
     
     const botOwnerId = global.CONFIG?.BOT_SETTINGS?.ADMINS?.[0];
 
+    // নিরাপত্তা চেক
     if (botOwnerId !== senderId.toString()) {
         return bot.sendMessage(chatId, `❌ Permission denied. Owner only command.`, { reply_to_message_id: messageId });
     }
@@ -46,7 +46,6 @@ module.exports.run = async (bot, msg) => {
             const userReply = msg.text.trim().toLowerCase();
             
             if (userReply === 'y') {
-                // Determine source (Code or URL) and call handler
                 if (data.fileCode) {
                     return handleInstallCode(bot, chatId, messageId, data.targetFilename, data.fileCode, data.isUpdate);
                 } else if (data.fileUrl) {
@@ -125,39 +124,43 @@ module.exports.run = async (bot, msg) => {
             return handleInstallURL(bot, chatId, messageId, targetFilename, fileUrl, false);
         }
         
-        // Neither code nor reply was provided
         return bot.sendMessage(chatId, `⚠️ Please provide the command code or reply to a \`.js\` file.`, { reply_to_message_id: messageId });
     }
     
-    // --- Other Subcommands (Unchanged) ---
-    // (Uninstall, Load, Unload, Loadall logic remains the same)
-    
+    // --- SUBCOMMAND: UNINSTALL ---
     if (subCommand === 'uninstall') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd uninstall <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
+        
         const filename = target.endsWith('.js') ? target : `${target}.js`;
+        const commandName = global.ALIASES[target] || target;
         
         try {
             const filePath = path.join(COMMANDS_DIR, filename);
+            
+            // 1. কমান্ড ফাইল আছে কিনা চেক করা
             if (!await fileExists(filePath)) {
-                return bot.sendMessage(chatId, `❌ Command \`${target}\` not found in commands directory.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
+                return bot.sendMessage(chatId, `❌ Command file \`${filename}\` not found in commands directory.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
             }
 
-            if (global.COMMANDS[target] || global.ALIASES[target]) {
-                unloadCommand(global.ALIASES[target] || target);
+            // 2. কমান্ডটিকে আনলোড করা
+            if (global.COMMANDS[commandName]) {
+                unloadCommand(commandName);
             }
 
+            // 3. ফাইলটি ফিজিক্যালি ডিলিট করা
             await fs.unlink(filePath);
 
-            return bot.sendMessage(chatId, `🗑️ Command \`${target}\` unloaded and file \`${filename}\` deleted successfully.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
+            return bot.sendMessage(chatId, `🗑️ Command \`${target}\` unloaded and file \`${filename}\` **deleted** successfully.`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
 
         } catch (e) {
-            console.error("Uninstall error:", e);
+            console.error(`Uninstall error for ${target}:`, e);
             return bot.sendMessage(chatId, `❌ Failed to uninstall \`${target}\`. Error: ${e.message}`, { reply_to_message_id: messageId, parse_mode: 'Markdown' });
         }
     }
     
+    // --- SUBCOMMAND: LOAD ---
     if (subCommand === 'load') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd load <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -165,6 +168,7 @@ module.exports.run = async (bot, msg) => {
         return handleLoad(bot, chatId, messageId, target);
     }
 
+    // --- SUBCOMMAND: UNLOAD ---
     if (subCommand === 'unload') {
         if (!target) {
             return bot.sendMessage(chatId, "⚠️ Usage: `/cmd unload <commandName>`", { reply_to_message_id: messageId, parse_mode: 'Markdown' });
@@ -172,6 +176,7 @@ module.exports.run = async (bot, msg) => {
         return handleUnload(bot, chatId, messageId, target);
     }
 
+    // --- SUBCOMMAND: LOADALL ---
     if (subCommand === 'loadall') {
         return handleLoadAll(bot, chatId, messageId);
     }
@@ -240,7 +245,7 @@ async function handleInstallCode(bot, chatId, replyToMessageId, targetFilename, 
     }
 }
 
-// --- LOAD/UNLOAD HANDLERS (Unchanged but using global functions) ---
+// --- LOAD/UNLOAD HANDLERS ---
 
 async function handleLoad(bot, chatId, messageId, target) {
     const filename = target.endsWith('.js') ? target : `${target}.js`;
