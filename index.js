@@ -35,6 +35,20 @@ global.loadedCommands = [];
 global.BOT_LISTENERS = []; 
 global.utils = {}; 
 
+const PERMISSION_LEVELS = {
+    0: "User",
+    1: "Admin",
+    2: "Sudo/Bot Owner"
+};
+
+global.getPermissionLevel = async function(userId) {
+    if (global.CONFIG.BOT_SETTINGS.ADMIN_IDS && global.CONFIG.BOT_SETTINGS.ADMIN_IDS.includes(userId.toString())) {
+        return 2; 
+    }
+    return 0; 
+};
+
+
 global.utils.getStreamFromURL = async function(url) {
     try {
         const response = await axios({
@@ -242,6 +256,19 @@ global.saveVerifiedUsers = async function() {
         if (commandModule && commandModule.run) {
             const userId = msg.from.id;
             
+            const requiredLevel = commandModule.config.permission || 0;
+            const userLevel = await global.getPermissionLevel(userId);
+            
+            if (userLevel < requiredLevel) {
+                 const requiredRole = PERMISSION_LEVELS[requiredLevel] || "Restricted";
+                 const denyMessage = `
+🚫 **Permission Denied!**
+This command requires **${requiredRole}** access (Level ${requiredLevel}).
+Your current access level is **${PERMISSION_LEVELS[userLevel] || 'User'}** (Level ${userLevel}).
+                 `;
+                 return global.bot.sendMessage(msg.chat.id, denyMessage, { reply_to_message_id: msg.message_id, parse_mode: 'Markdown' });
+            }
+            
             if (commandModule.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
                 if (!global.verifiedUsers[userId]) {
                     let text = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
@@ -266,6 +293,12 @@ global.saveVerifiedUsers = async function() {
               const module = global.COMMANDS[commandName];
               
               if (module.config && module.config.prefix === false && module.run) {
+                   const userId = msg.from.id;
+                   
+                   const requiredLevel = module.config.permission || 0;
+                   const userLevel = await global.getPermissionLevel(userId);
+            
+                   if (userLevel < requiredLevel) continue; 
                   
                   const commandTriggers = [module.config.name, ...(module.config.aliases || [])]
                       .map(trigger => trigger.toLowerCase());
