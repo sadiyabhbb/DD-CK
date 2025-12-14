@@ -7,7 +7,6 @@ const axios = require('axios');
 
 const commandsPath = path.join(__dirname, 'commands');
 const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
-// CLONED_BOTS_FILE সংক্রান্ত ভ্যারিয়েবলটি আর প্রয়োজন নেই
 
 let config = {};
 try {
@@ -35,7 +34,7 @@ global.loadedCommands = [];
 global.BOT_LISTENERS = []; 
 global.utils = {}; 
 global.BOT_INSTANCES = []; 
-global.SESSION_CLONES = []; // নতুন: সেশন-ভিত্তিক ক্লোন টোকেন রাখার জন্য
+global.SESSION_CLONES = []; 
 
 global.utils.getStreamFromURL = async function(url) {
     try {
@@ -52,7 +51,9 @@ global.utils.getStreamFromURL = async function(url) {
     }
 };
 
-global.loadCommand = function(commandName, botInstance) {
+// 🌟 পরিবর্তন: এই ফাংশনটি এখন শুধুমাত্র গ্লোবাল কমান্ডস সেট তৈরি করে।
+// initCallback কল করার লজিকটি startBots এবং initializeNewBot এ সরানো হলো।
+global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
     const filePath = path.join(commandsPath, filename);
 
@@ -86,10 +87,6 @@ global.loadCommand = function(commandName, botInstance) {
 
     const commandConfigName = commandModule.config.name || commandName;
     console.log(`[ BOT ] cmd Loaded → Name: ${commandConfigName} | File: ${commandName}.js`);
-
-    if (botInstance && commandModule.initCallback) { 
-        commandModule.initCallback(botInstance);
-    }
 };
 
 global.unloadCommand = function(commandName) {
@@ -137,9 +134,7 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
-// ফাইল-ভিত্তিক সেভিং লজিক বাদ দেওয়া হলো, যেহেতু সেশন-ভিত্তিক দরকার।
-// global.loadClonedBots এবং global.saveClonedBots ফাংশন দুটি এখন আর প্রয়োজন নেই।
-
+// এই ফাংশনটি গ্লোবাল করা হলো যাতে clone.js এটিকে ব্যবহার করতে পারে
 global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
@@ -242,6 +237,42 @@ global.setupBotListeners = function(botInstance, botConfig) {
     });
 }
 
+// 🌟 পরিবর্তন: এই ফাংশনটি শুধুমাত্র একবার কল হবে, সব কমান্ড লোড করার জন্য।
+function loadAllCommands() {
+    let initialLoadCount = 0;
+    if (fs.existsSync(commandsPath)) {
+        const files = fs.readdirSync(commandsPath);
+        for (const file of files) {
+            if (file.endsWith(".js")) {
+                const commandName = file.slice(0, -3);
+                try {
+                    global.loadCommand(commandName); // 🌟 botInstance পাস করা হলো না
+                    initialLoadCount++;
+                } catch (err) {
+                    console.error(`❌ Error loading command ${file}:`, err.message);
+                }
+            }
+        }
+    }
+    global.loadedCommands.sort((a, b) => a.name.localeCompare(b.name));
+    console.log(`[ CORE ] Loaded ${initialLoadCount} global command(s).`);
+}
+
+// 🌟 নতুন ফাংশন: প্রতিটি বট ইনস্ট্যান্সের জন্য initCallback কল করা।
+function initializeBotCallbacks(telegramBot) {
+    for (const commandName in global.COMMANDS) {
+        const commandModule = global.COMMANDS[commandName];
+        if (commandModule.initCallback) {
+            try {
+                commandModule.initCallback(telegramBot); 
+            } catch (err) {
+                 console.error(`❌ Error running initCallback for ${commandName}:`, err.message);
+            }
+        }
+    }
+}
+
+
 async function startBots(botConfigs) {
     for (const botConfig of botConfigs) {
         try {
@@ -263,27 +294,12 @@ async function startBots(botConfigs) {
 
             global.setupBotListeners(telegramBot, botConfig); 
             global.BOT_INSTANCES.push(telegramBot);
+            
+            // 🌟 পরিবর্তন: কমান্ড লোড করার পরিবর্তে initCallbacks কল করা হলো
+            initializeBotCallbacks(telegramBot);
 
             console.log(`✅ [${botConfig.name}] Bot Started! ID: ${botConfig.id}, Username: @${botConfig.username}`);
             
-            let initialLoadCount = 0;
-            if (fs.existsSync(commandsPath)) {
-                const files = fs.readdirSync(commandsPath);
-                for (const file of files) {
-                    if (file.endsWith(".js")) {
-                        const commandName = file.slice(0, -3);
-                        try {
-                            global.loadCommand(commandName, telegramBot); 
-                            initialLoadCount++;
-                        } catch (err) {
-                            console.error(`❌ Error loading command ${file}:`, err.message);
-                        }
-                    }
-                }
-            }
-            global.loadedCommands.sort((a, b) => a.name.localeCompare(b.name));
-            console.log(`[${botConfig.name}] Loaded ${initialLoadCount} command(s).`);
-
 
         } catch (err) {
             console.error(`❌ Failed to start bot with token ending in ...${botConfig.token.slice(-4)}:`, err.message);
@@ -293,23 +309,24 @@ async function startBots(botConfigs) {
 
 
 (async () => {
+    // 1. সমস্ত গ্লোবাল কমান্ডস লোড করুন
+    loadAllCommands();
+
     global.verifiedUsers = await loadVerifiedUsers();
     console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
 
     global.userDB = { approved: [], pending: [], banned: [] }; 
     console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
-    // ক্লোনিং লজিকটি শুধুমাত্র প্রধান বট দিয়ে শুরু হবে, যেহেতু এটি সেশন-ভিত্তিক।
-    // global.loadClonedBots() কলটি বাদ দেওয়া হলো।
     const allBotConfigs = [
         {
             token: config.BOT_TOKEN,
             name: global.CONFIG.BOT_SETTINGS.NAME || "Main Bot",
             isMain: true 
         }
-        // অন্য কোনো বট কনফিগ এখানে লোড হচ্ছে না (সেশন-ভিত্তিক)
     ];
     
+    // 2. বটগুলি শুরু করুন এবং কমান্ডস লিসেনার যুক্ত করুন
     await startBots(allBotConfigs);
     
     const botUsername = global.bot ? global.bot.options.username || "N/A" : "N/A";
