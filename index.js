@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const fse = require('fs-extra'); 
+const axios = require('axios'); 
 
 const commandsPath = path.join(__dirname, 'commands');
 const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
@@ -32,6 +33,22 @@ global.COMMANDS = {};
 global.ALIASES = {}; 
 global.loadedCommands = []; 
 global.BOT_LISTENERS = []; 
+global.utils = {}; 
+
+global.utils.getStreamFromURL = async function(url) {
+    try {
+        const response = await axios({
+            url,
+            method: 'GET',
+            responseType: 'stream', 
+            headers: { 'User-Agent': 'Telegram Bot' } 
+        });
+        return response.data; 
+    } catch (error) {
+        console.error("❌ Error fetching stream from URL:", error.message);
+        throw new Error("Failed to fetch stream from URL.");
+    }
+};
 
 global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
@@ -212,6 +229,9 @@ global.saveVerifiedUsers = async function() {
       
       const text = msg.text;
       
+      let isCommandExecuted = false;
+
+      // 1. Prefix Command Check (Handles prefix: true)
       if (text && text.startsWith(global.PREFIX)) {
         const args = text.slice(global.PREFIX.length).trim().split(/\s+/);
         const commandNameOrAlias = args.shift().toLowerCase();
@@ -230,14 +250,46 @@ global.saveVerifiedUsers = async function() {
             }
             
             try {
-                await commandModule.run(global.bot, msg);
+                await commandModule.run(global.bot, msg, args);
+                isCommandExecuted = true;
             } catch (err) {
                 console.error(`❌ Command Runtime Error (${actualCommandName}):`, err.message);
             }
-            return; 
         }
       }
       
+      // 2. Non-Prefix Command Check (Handles prefix: false)
+      if (!isCommandExecuted && text) {
+          const lowerText = text.toLowerCase();
+          
+          for (const commandName in global.COMMANDS) {
+              const module = global.COMMANDS[commandName];
+              
+              if (module.config && module.config.prefix === false && module.run) {
+                  
+                  const commandTriggers = [module.config.name, ...(module.config.aliases || [])]
+                      .map(trigger => trigger.toLowerCase());
+                      
+                  const foundTrigger = commandTriggers.find(trigger => {
+                      return lowerText === trigger || lowerText.startsWith(trigger + ' ');
+                  });
+
+                  if (foundTrigger) {
+                       const args = lowerText.slice(foundTrigger.length).trim().split(/\s+/).filter(a => a);
+
+                       try {
+                           await module.run(global.bot, msg, args);
+                           isCommandExecuted = true;
+                           break; 
+                       } catch (err) {
+                           console.error(`❌ Non-Prefix Command Runtime Error (${commandName}):`, err.message);
+                       }
+                  }
+              }
+          }
+      }
+      
+      // 3. handleMessage listener Check (For all messages, e.g., unsend)
       if (text) {
           for (const commandName in global.COMMANDS) {
               const module = global.COMMANDS[commandName];
