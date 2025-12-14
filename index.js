@@ -16,7 +16,7 @@ try {
     throw new Error('config.js file not found. Please create it.');
   }
 } catch (err) {
-  console.error(`FATAL: Configuration load failed: ${err.message}`);
+  console.error(`❌ FATAL: Configuration load failed: ${err.message}`);
   process.exit(1);
 }
 
@@ -30,6 +30,7 @@ global.PREFIX = config.BOT_SETTINGS.PREFIX || "/";
 
 global.COMMANDS = {}; 
 global.ALIASES = {}; 
+global.loadedCommands = []; 
 global.BOT_LISTENERS = []; 
 
 global.loadCommand = function(commandName) {
@@ -56,6 +57,8 @@ global.loadCommand = function(commandName) {
 
     global.COMMANDS[commandName] = commandModule;
     
+    global.loadedCommands.push(commandModule.config);
+    
     if (commandModule.config.aliases) {
          commandModule.config.aliases.forEach(alias => {
              global.ALIASES[alias] = commandName;
@@ -73,6 +76,11 @@ global.loadCommand = function(commandName) {
 global.unloadCommand = function(commandName) {
     const commandModule = global.COMMANDS[commandName];
     if (!commandModule) return;
+    
+    const index = global.loadedCommands.findIndex(cmd => cmd.name === commandName);
+    if (index > -1) {
+        global.loadedCommands.splice(index, 1);
+    }
 
     if (commandModule.config && commandModule.config.aliases) {
         commandModule.config.aliases.forEach(alias => {
@@ -112,10 +120,10 @@ global.saveVerifiedUsers = async function() {
 
 (async () => {
   global.verifiedUsers = await loadVerifiedUsers();
-  console.log(`Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
+  console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
 
   global.userDB = { approved: [], pending: [], banned: [] }; 
-  console.log('Database loading skipped. Using in-memory dummy DB.');
+  console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
   const telegramBot = new TelegramBot(config.BOT_TOKEN, {
     polling: true,
@@ -139,7 +147,7 @@ global.saveVerifiedUsers = async function() {
       botName = me.first_name || "N/A";
       botName = global.CONFIG.BOT_SETTINGS.NAME || botName; 
   } catch (err) {
-      console.error("Failed to fetch bot info (getMe):", err.message);
+      console.error("❌ Failed to fetch bot info (getMe):", err.message);
   }
 
   let initialLoadCount = 0;
@@ -165,6 +173,9 @@ global.saveVerifiedUsers = async function() {
       }
     }
   }
+  
+  global.loadedCommands.sort((a, b) => a.name.localeCompare(b.name));
+
 
   global.bot.on('message', async (msg) => {
     
@@ -269,7 +280,7 @@ global.saveVerifiedUsers = async function() {
 
 
   app.listen(port, () => {
-    console.log(`Bot server running via polling on port ${port}`);
+    console.log(` Bot server running via polling on port ${port}`);
     console.log(` Command Prefix locked to: "${global.PREFIX}"`);
   });
 
