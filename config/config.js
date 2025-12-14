@@ -9,6 +9,10 @@ module.exports = {
     ADMIN_FACEBOOK_URL: "https://www.facebook.com/LIKHONAHMED009",
     ADMIN_WHATSAPP: "wa.me/+8801761838316",
     CREDIT: "LIKHON AHMED",
+    
+  
+    UNSEND_REACTION_EMOJI: "🤬",
+    
   },
 
   OWNER: {
