@@ -249,7 +249,7 @@ module.exports.handleMessage = async (bot, msg) => {
         let mediaType = null;
         let fileId = null;
         
-        if (msg.photo) {
+        if (msg.photo) { 
             mediaType = 'photo';
             fileId = msg.photo[msg.photo.length - 1].file_id; 
         } else if (msg.video) {
@@ -261,6 +261,8 @@ module.exports.handleMessage = async (bot, msg) => {
         } else if (msg.audio) {
              mediaType = 'audio';
              fileId = msg.audio.file_id;
+        } else if (msg.sticker || msg.voice || msg.text) { 
+             return bot.sendMessage(chatId, "⚠️ দয়া করে একটি ফাইল, ছবি, ভিডিও বা ডকুমেন্ট পাঠান। স্টিকার, ভয়েস বা শুধু টেক্সট গ্রহণ করা হবে না।", { reply_to_message_id: msg.message_id });
         }
 
         if (fileId) {
@@ -278,9 +280,7 @@ module.exports.handleMessage = async (bot, msg) => {
             });
             global.fileUploadState[senderId].step = 3; 
 
-        } else {
-             bot.sendMessage(chatId, "⚠️ দয়া করে একটি ফাইল, ছবি, ভিডিও বা ডকুমেন্ট পাঠান। শুধু টেক্সট গ্রহণ করা হবে না।", { reply_to_message_id: msg.message_id });
-        }
+        } 
         return;
     }
 
@@ -340,7 +340,7 @@ module.exports.handleMessage = async (bot, msg) => {
             await step6_finalPost(bot, chatId, senderId, scheduleTime);
             
         } catch (e) {
-            bot.sendMessage(chatId, `❌ **ভুল সময় ফরম্যাট!** দয়া করে YYYY-MM-DD HH:MM:SS ফরম্যাটে সময় দিন (যেমন: 2025-12-30 22:30:00).`, { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, `❌ **ভুল সময় ফরম্যাট!** দয়া করে YYYY-MM-DD HH:MM:SS ফরম্যাটে সময় দিন (যেমন: 2026-01-01 10:00:00).`, { parse_mode: 'Markdown' });
         }
         return;
     }
@@ -394,7 +394,7 @@ module.exports.initCallback = function(bot) {
 
             if (decision === 'yes') {
                 global.fileUploadState[senderId].step = 5.1; 
-                bot.sendMessage(chatId, `⏰ দয়া করে সময়সূচী সেট করুন (Format: YYYY-MM-DD HH:MM:SS), উদাহরণ: \`2025-12-30 22:30:00\``, { reply_to_message_id: message.message_id, parse_mode: 'Markdown' });
+                bot.sendMessage(chatId, `⏰ দয়া করে সময়সূচী সেট করুন (Format: YYYY-MM-DD HH:MM:SS), উদাহরণ: \`2026-01-01 10:00:00\``, { reply_to_message_id: message.message_id, parse_mode: 'Markdown' });
             } else {
                 await step6_finalPost(bot, chatId, senderId, null); 
             }
