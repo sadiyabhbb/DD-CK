@@ -136,7 +136,7 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
-async function loadClonedBots() {
+global.loadClonedBots = async function() {
     try {
         if (fse.existsSync(CLONED_BOTS_FILE)) {
             return await fse.readJson(CLONED_BOTS_FILE);
@@ -156,7 +156,8 @@ global.saveClonedBots = async function(bots) {
     }
 };
 
-function setupBotListeners(botInstance, botConfig) {
+// 🌟 এই ফাংশনটি গ্লোবাল করা হলো যাতে clone.js এটিকে ব্যবহার করতে পারে
+global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
         console.error(`❌ [${botConfig.name}] Polling error:`, error.response?.data || error.message || error);
@@ -277,7 +278,8 @@ async function startBots(botConfigs) {
             botConfig.username = me.username || "N/A";
             botConfig.name = botConfig.name || me.first_name || "N/A";
 
-            setupBotListeners(telegramBot, botConfig);
+            // 🌟 গ্লোবাল ফাংশন কল করা হলো
+            global.setupBotListeners(telegramBot, botConfig); 
             global.BOT_INSTANCES.push(telegramBot);
 
             console.log(`✅ [${botConfig.name}] Bot Started! ID: ${botConfig.id}, Username: @${botConfig.username}`);
@@ -315,7 +317,7 @@ async function startBots(botConfigs) {
     global.userDB = { approved: [], pending: [], banned: [] }; 
     console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
-    const clonedBots = await loadClonedBots();
+    const clonedBots = await global.loadClonedBots();
     const allBotConfigs = [
         {
             token: config.BOT_TOKEN,
