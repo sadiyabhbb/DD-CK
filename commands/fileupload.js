@@ -261,8 +261,6 @@ module.exports.handleMessage = async (bot, msg) => {
         } else if (msg.audio) {
              mediaType = 'audio';
              fileId = msg.audio.file_id;
-        } else if (msg.sticker || msg.voice || msg.text) { 
-             return bot.sendMessage(chatId, "⚠️ দয়া করে একটি ফাইল, ছবি, ভিডিও বা ডকুমেন্ট পাঠান। স্টিকার, ভয়েস বা শুধু টেক্সট গ্রহণ করা হবে না।", { reply_to_message_id: msg.message_id });
         }
 
         if (fileId) {
@@ -280,7 +278,9 @@ module.exports.handleMessage = async (bot, msg) => {
             });
             global.fileUploadState[senderId].step = 3; 
 
-        } 
+        } else if (msg.text || msg.sticker || msg.voice) {
+             return bot.sendMessage(chatId, "⚠️ দয়া করে একটি ফাইল, ছবি, ভিডিও বা ডকুমেন্ট পাঠান। শুধু টেক্সট বা স্টিকার গ্রহণ করা হবে না।", { reply_to_message_id: msg.message_id });
+        }
         return;
     }
 
