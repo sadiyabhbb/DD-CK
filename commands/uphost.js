@@ -20,10 +20,10 @@ async function loadData() {
     try {
         if (fse.existsSync(DATA_FILE)) {
             hostedUrls = await fse.readJson(DATA_FILE);
-            console.log(`✅ Uphost: Loaded ${hostedUrls.length} URLs.`);
+            //console.log(`✅ Uphost: Loaded ${hostedUrls.length} URLs.`);
         } else {
             hostedUrls = [];
-            console.log("✅ Uphost: Data file not found. Starting with empty list.");
+            //console.log("✅ Uphost: Data file not found. Starting with empty list.");
         }
     } catch (e) {
         console.error("❌ Uphost: Error loading data:", e.message);
