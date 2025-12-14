@@ -1,6 +1,13 @@
 const axios = require("axios");
 const FormData = require("form-data");
 
+if (!global.imgCommandState) {
+    global.imgCommandState = {};
+}
+if (!global.handleReplyState) {
+    global.handleReplyState = {};
+}
+
 module.exports.config = {
   name: "img",
   aliases: ["image", "editimg"],
@@ -17,6 +24,7 @@ module.exports.config = {
 module.exports.run = async (bot, msg, args) => {
   const chatId = msg.chat.id;
   const messageId = msg.message_id;
+  const senderId = msg.from.id;
 
   if (!msg.reply_to_message || !msg.reply_to_message.photo || msg.reply_to_message.photo.length === 0) {
     return bot.sendMessage(chatId, "⚠️ Please reply to an image.", { reply_to_message_id: messageId });
@@ -24,13 +32,21 @@ module.exports.run = async (bot, msg, args) => {
 
   const photo = msg.reply_to_message.photo.pop();
   const fileId = photo.file_id;
-  const senderId = msg.from.id;
+  
+  const stateId = Math.random().toString(36).substring(2, 8); 
+  
+  global.imgCommandState[stateId] = {
+      fileId: fileId,
+      author: senderId,
+      replyTo: messageId,
+      timeout: Date.now() + 300000 
+  };
 
   const buttons = [
-    [{ text: "⬆️ Upscale", callback_data: `img_upscale:${senderId}:${fileId}` }, { text: "✨ Enhance", callback_data: `img_enhance:${senderId}:${fileId}` }],
-    [{ text: "✏️ Remove Text", callback_data: `img_rmtext:${senderId}:${fileId}` }, { text: "💧 Watermark Remove", callback_data: `img_rmwtmk:${senderId}:${fileId}` }],
-    [{ text: "📄 OCR (Get Text)", callback_data: `img_ocr:${senderId}:${fileId}` }, { text: "✂️ Remove Background", callback_data: `img_rmbg:${senderId}:${fileId}` }],
-    [{ text: "🤖 AI Edit", callback_data: `img_ai:${senderId}:${fileId}` }]
+    [{ text: "⬆️ Upscale", callback_data: `img_upscale:${stateId}` }, { text: "✨ Enhance", callback_data: `img_enhance:${stateId}` }],
+    [{ text: "✏️ Remove Text", callback_data: `img_rmtext:${stateId}` }, { text: "💧 Watermark Remove", callback_data: `img_rmwtmk:${stateId}` }],
+    [{ text: "📄 OCR (Get Text)", callback_data: `img_ocr:${stateId}` }, { text: "✂️ Remove Background", callback_data: `img_rmbg:${stateId}` }],
+    [{ text: "🤖 AI Edit", callback_data: `img_ai:${stateId}` }]
   ];
 
   await bot.sendMessage(chatId, "📸 Select AI Image Tool:", { 
@@ -52,14 +68,18 @@ module.exports.initCallback = function(bot) {
 
         const parts = data.split(':');
         const action = parts[0]; 
-        const authorId = parts[1];
-        const fileId = parts[2];
+        const stateId = parts[1];
 
-        if (senderId.toString() !== authorId) {
-             return bot.sendMessage(chatId, "❌ Only the user who started the command can use these buttons.", { reply_to_message_id: msg.message_id });
+        const stateData = global.imgCommandState[stateId];
+        
+        if (!stateData || senderId !== stateData.author || stateData.timeout < Date.now()) {
+             if (global.imgCommandState[stateId]) delete global.imgCommandState[stateId];
+             return bot.sendMessage(chatId, "❌ এই প্রক্রিয়ার সময়সীমা শেষ হয়ে গেছে অথবা আপনি এটি শুরু করেননি।", { reply_to_message_id: msg.message_id });
         }
         
-        const replyTo = msg.reply_to_message ? msg.reply_to_message.message_id : msg.message_id;
+        const { fileId, replyTo } = stateData;
+        
+        delete global.imgCommandState[stateId];
 
         if (action === "img_ai") {
             const waitMsg = await bot.sendMessage(chatId, "⏳ Processing image for upload...", { reply_to_message_id: replyTo });
@@ -72,7 +92,6 @@ module.exports.initCallback = function(bot) {
 
                 const sent = await bot.sendMessage(chatId, "📝 Send your AI Generation Prompt", { reply_to_message_id: replyTo });
                 
-                if (!global.handleReplyState) global.handleReplyState = {};
                 global.handleReplyState[senderId] = {
                     name: "img",
                     messageID: sent.message_id,
