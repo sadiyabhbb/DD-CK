@@ -5,7 +5,7 @@ module.exports.config = {
     name: "file",
     credits: "LIKHON X TISHA",
     aliases: ["getcmd"],
-    prefix: true,
+    prefix: false,
     permission: 2, 
     description: "Get the source code file of a command. Owner only.",
     tags: ["system", "owner"]
