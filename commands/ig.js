@@ -33,6 +33,7 @@ module.exports.run = async (bot, msg) => {
         "_বুকে হাজারো কষ্ট নিয়ে\n                  আলহামদুলিল্লাহ বলাটা••!☺️\n_আল্লাহর প্রতি অগাধ বিশ্বাসের নমুনা❤️🥀",
         "_আল্লাহর ভালোবাসা পেতে চাও•••!🤗\n\n_তবে রাসুল (সা:)কে অনুসরণ করো••!🥰   ",
       ];
+
       const links = [
         "https://i.postimg.cc/7LdGnyjQ/images-31.jpg",
         "https://i.postimg.cc/65c81ZDZ/images-30.jpg",
@@ -57,10 +58,8 @@ module.exports.run = async (bot, msg) => {
       const randomCaption = captions[Math.floor(Math.random() * captions.length)];
       const randomImageLink = links[Math.floor(Math.random() * links.length)];
 
-      const imageResponse = await axios.get(randomImageLink, { responseType: 'arraybuffer' });
-      const imageBuffer = Buffer.from(imageResponse.data, 'binary');
-
-      bot.sendPhoto(chatId, imageBuffer, {
+      
+      bot.sendPhoto(chatId, randomImageLink, {
         caption: randomCaption,
         parse_mode: 'Markdown',
         reply_to_message_id: messageId
