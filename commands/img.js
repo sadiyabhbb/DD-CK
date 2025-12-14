@@ -101,8 +101,7 @@ module.exports.initCallback = function(bot) {
                 };
 
             } catch (err) {
-                 console.error("AI Edit Upload Error:", err);
-                 await bot.deleteMessage(chatId, waitMsg.message_id);
+                 await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
                  bot.sendMessage(chatId, "❌ Error uploading image for AI edit.", { reply_to_message_id: replyTo });
             }
             return;
@@ -116,47 +115,51 @@ module.exports.handleReply = async ({ bot, msg, handleReply }) => {
     const chatId = msg.chat.id;
     const senderId = msg.from.id;
 
-    if (handleReply.name !== "img" || handleReply.type !== "ai-edit" || senderId !== handleReply.author) return;
+    if (!handleReply || handleReply.name !== "img" || handleReply.type !== "ai-edit" || senderId !== handleReply.author) {
+        return; 
+    }
+
+    const { url, replyTo } = handleReply.data;
+    const prompt = msg.text ? msg.text.trim() : null;
+    
+    if (!prompt) {
+        return bot.sendMessage(chatId, "❌ প্রম্পট খালি হতে পারে না। দয়া করে কিছু লিখে পাঠান।", { reply_to_message_id: msg.message_id });
+    }
 
     if (global.handleReplyState && global.handleReplyState[senderId]) {
         delete global.handleReplyState[senderId];
     }
     
-    const { url, replyTo } = handleReply.data;
-    const prompt = msg.text.trim();
-    if (!prompt) return bot.sendMessage(chatId, "❌ Prompt cannot be empty.", { reply_to_message_id: msg.message_id });
-
     const waitMsg = await bot.sendMessage(chatId, "⏳ Generating AI Image...", { reply_to_message_id: replyTo });
 
     try {
         const apis = await axios.get("https://raw.githubusercontent.com/MOHAMMAD-NAYAN-07/Nayan/main/api.json");
         const base = apis.data.api;
 
-        const mainAPI = `${base}/nayan/ai-generate?url=${url}&prompt=${encodeURIComponent(prompt)}`;
-        const fallbackAPI = `${base}/nayan/ai-generate2?url=${url}&prompt=${encodeURIComponent(prompt)}`;
+        const encodedPrompt = encodeURIComponent(prompt);
+        const mainAPI = `${base}/nayan/ai-generate?url=${url}&prompt=${encodedPrompt}`;
+        const fallbackAPI = `${base}/nayan/ai-generate2?url=${url}&prompt=${encodedPrompt}`;
 
         let res = await axios.get(mainAPI);
 
         if (!res.data || res.data.error || !res.data.generated_image) {
-            console.log("⚠ Main API failed. Using fallback...");
             res = await axios.get(fallbackAPI);
         }
 
         const out = res.data.generated_image;
 
         if (!out) {
-            await bot.deleteMessage(chatId, waitMsg.message_id);
+            await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
             return bot.sendMessage(chatId, "❌ AI edit failed. No image generated.", { reply_to_message_id: replyTo });
         }
 
         const processed = await axios.get(out, { responseType: "arraybuffer" });
-        await bot.deleteMessage(chatId, waitMsg.message_id);
+        await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
         return bot.sendPhoto(chatId, processed.data, { caption: "✔️ AI Edit Completed", reply_to_message_id: replyTo });
 
     } catch (err) {
-        console.error("AI Edit Error:", err);
-        await bot.deleteMessage(chatId, waitMsg.message_id);
-        return bot.sendMessage(chatId, "❌ Error generating AI image.", { reply_to_message_id: replyTo });
+        await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {}); 
+        return bot.sendMessage(chatId, "❌ Error generating AI image. (API/Server Error)", { reply_to_message_id: replyTo });
     }
 };
 
@@ -197,14 +200,14 @@ async function processImage(bot, chatId, fileId, action, replyTo) {
         };
 
         if (!apiMap[action]) {
-            await bot.deleteMessage(chatId, waitMsg.message_id);
+            await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
             return bot.sendMessage(chatId, "❌ Invalid option.");
         }
 
         const res = await axios.get(apiMap[action].url);
 
         if (action === "img_ocr") {
-            await bot.deleteMessage(chatId, waitMsg.message_id);
+            await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
             if (!res.data.text) return bot.sendMessage(chatId, "❌ Could not extract text.", { reply_to_message_id: replyTo });
             return bot.sendMessage(chatId, `📄 Extracted Text:\n\n${res.data.text}`, { reply_to_message_id: replyTo });
         }
@@ -212,17 +215,16 @@ async function processImage(bot, chatId, fileId, action, replyTo) {
         const out = res.data.upscaled || res.data.enhanced_image || res.data.removed_text_image || res.data.watermark_removed_image || res.data.removed_background_image;
 
         if (!out) {
-            await bot.deleteMessage(chatId, waitMsg.message_id);
+            await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
             return bot.sendMessage(chatId, "❌ Failed to process image. API response error.", { reply_to_message_id: replyTo });
         }
 
         const processed = await axios.get(out, { responseType: "arraybuffer" });
-        await bot.deleteMessage(chatId, waitMsg.message_id);
+        await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
         return bot.sendPhoto(chatId, processed.data, { caption: `✔️ ${apiMap[action].type}`, reply_to_message_id: replyTo });
 
     } catch (err) {
-        console.error("Image Processing Error:", err);
-        await bot.deleteMessage(chatId, waitMsg.message_id);
+        await bot.deleteMessage(chatId, waitMsg.message_id).catch(() => {});
         bot.sendMessage(chatId, "❌ Error processing image. Check bot logs.", { reply_to_message_id: replyTo });
     }
 }
