@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "pp",
-    credits: "LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON AHMED",
     aliases: ["pfp", "profilepic"],
     prefix: true,
     permission: 0, 
@@ -17,25 +17,14 @@ async function getUserIdFromMentionOrText(bot, msg, args) {
         return { userId: msg.reply_to_message.from.id, userName: msg.reply_to_message.from.first_name };
     }
 
-    if (msg.entities) {
+    if (msg.entities && msg.entities.length > 0) {
         for (const entity of msg.entities) {
-            if (entity.type === 'mention' && msg.text.startsWith(global.PREFIX + 'pp')) {
-                const username = msg.text.substring(entity.offset + 1, entity.offset + entity.length);
-                
-                try {
-                    if (args.length > 0) {
-                         const potentialId = parseInt(args[0]);
-                         if (!isNaN(potentialId)) {
-                             return { userId: potentialId, userName: potentialId };
-                         }
-                    }
-                } catch (e) {
-                }
+            if (entity.type === 'mention' && msg.text && msg.text.startsWith(global.PREFIX + 'pp')) {
             }
         }
     }
     
-    if (args.length > 0) {
+    if (args && args.length > 0) {
         const potentialId = parseInt(args[0]);
         if (!isNaN(potentialId)) {
             return { userId: potentialId, userName: potentialId };
