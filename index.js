@@ -24,6 +24,7 @@ try {
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
+// 🌟 গ্লোবাল ভ্যারিয়েবল ইনিশিয়ালাইজেশন
 global.botStartTime = Date.now();
 global.activeEmails = {};
 global.CONFIG = config;
@@ -51,8 +52,7 @@ global.utils.getStreamFromURL = async function(url) {
     }
 };
 
-// 🌟 পরিবর্তন: এই ফাংশনটি এখন শুধুমাত্র গ্লোবাল কমান্ডস সেট তৈরি করে।
-// initCallback কল করার লজিকটি startBots এবং initializeNewBot এ সরানো হলো।
+// 🌟 কমান্ড লোডিং ফাংশন (শুধুমাত্র গ্লোবাল সেট তৈরি করবে)
 global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
     const filePath = path.join(commandsPath, filename);
@@ -134,7 +134,7 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
-// এই ফাংশনটি গ্লোবাল করা হলো যাতে clone.js এটিকে ব্যবহার করতে পারে
+// 🌟 গ্লোবাল লিসেনার ফাংশন (Clone Support-এর জন্য গ্লোবালি অ্যাক্সেসযোগ্য)
 global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
@@ -237,7 +237,7 @@ global.setupBotListeners = function(botInstance, botConfig) {
     });
 }
 
-// 🌟 পরিবর্তন: এই ফাংশনটি শুধুমাত্র একবার কল হবে, সব কমান্ড লোড করার জন্য।
+// 🌟 এই ফাংশনটি শুধুমাত্র একবার কল হবে, সব কমান্ড লোড করার জন্য।
 function loadAllCommands() {
     let initialLoadCount = 0;
     if (fs.existsSync(commandsPath)) {
@@ -246,7 +246,7 @@ function loadAllCommands() {
             if (file.endsWith(".js")) {
                 const commandName = file.slice(0, -3);
                 try {
-                    global.loadCommand(commandName); // 🌟 botInstance পাস করা হলো না
+                    global.loadCommand(commandName); 
                     initialLoadCount++;
                 } catch (err) {
                     console.error(`❌ Error loading command ${file}:`, err.message);
@@ -258,7 +258,7 @@ function loadAllCommands() {
     console.log(`[ CORE ] Loaded ${initialLoadCount} global command(s).`);
 }
 
-// 🌟 নতুন ফাংশন: প্রতিটি বট ইনস্ট্যান্সের জন্য initCallback কল করা।
+// 🌟 প্রতিটি বট ইনস্ট্যান্সের জন্য initCallback কল করা।
 function initializeBotCallbacks(telegramBot) {
     for (const commandName in global.COMMANDS) {
         const commandModule = global.COMMANDS[commandName];
@@ -295,7 +295,6 @@ async function startBots(botConfigs) {
             global.setupBotListeners(telegramBot, botConfig); 
             global.BOT_INSTANCES.push(telegramBot);
             
-            // 🌟 পরিবর্তন: কমান্ড লোড করার পরিবর্তে initCallbacks কল করা হলো
             initializeBotCallbacks(telegramBot);
 
             console.log(`✅ [${botConfig.name}] Bot Started! ID: ${botConfig.id}, Username: @${botConfig.username}`);
@@ -365,3 +364,8 @@ async function startBots(botConfigs) {
     });
 
 })();
+
+// 🌟🌟🌟 এই নতুন অংশটি ক্লোন সাপোর্ট-এর জন্য যুক্ত করা হয়েছে 🌟🌟🌟
+module.exports = {
+    setupBotListeners: global.setupBotListeners
+};
