@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports.config = {
     name: "unsend",
-    credits: "LIKHON AHMED (Adapted by Gemini)",
+    credits: "LIKHON X TISHA",
     aliases: ["delete", "del"],
     prefix: true,
     permission: 1,
@@ -47,7 +47,7 @@ module.exports.handleMessage = async (bot, msg) => {
     const messageId = msg.message_id;
     const senderId = msg.from.id;
     
-    if (msg.text === reactionEmoji && msg.reply_to_message) {
+    if (msg.reply_to_message && msg.text && msg.text.trim() === reactionEmoji) {
         const targetMessage = msg.reply_to_message;
         
         await bot.deleteMessage(chatId, messageId).catch(() => {}); 
