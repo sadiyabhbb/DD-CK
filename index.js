@@ -7,7 +7,7 @@ const axios = require('axios');
 
 const commandsPath = path.join(__dirname, 'commands');
 const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
-const CLONED_BOTS_FILE = path.join(__dirname, 'config', 'cloned_bots_data.json'); 
+// CLONED_BOTS_FILE সংক্রান্ত ভ্যারিয়েবলটি আর প্রয়োজন নেই
 
 let config = {};
 try {
@@ -35,6 +35,7 @@ global.loadedCommands = [];
 global.BOT_LISTENERS = []; 
 global.utils = {}; 
 global.BOT_INSTANCES = []; 
+global.SESSION_CLONES = []; // নতুন: সেশন-ভিত্তিক ক্লোন টোকেন রাখার জন্য
 
 global.utils.getStreamFromURL = async function(url) {
     try {
@@ -136,27 +137,9 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
-global.loadClonedBots = async function() {
-    try {
-        if (fse.existsSync(CLONED_BOTS_FILE)) {
-            return await fse.readJson(CLONED_BOTS_FILE);
-        }
-        return config.CLONED_BOTS || [];
-    } catch (error) {
-        console.error("❌ Error loading cloned bots data:", error.message);
-        return [];
-    }
-}
+// ফাইল-ভিত্তিক সেভিং লজিক বাদ দেওয়া হলো, যেহেতু সেশন-ভিত্তিক দরকার।
+// global.loadClonedBots এবং global.saveClonedBots ফাংশন দুটি এখন আর প্রয়োজন নেই।
 
-global.saveClonedBots = async function(bots) {
-    try {
-        await fse.writeJson(CLONED_BOTS_FILE, bots, { spaces: 2 });
-    } catch (error) {
-        console.error("❌ Error saving cloned bots data:", error.message);
-    }
-};
-
-// 🌟 এই ফাংশনটি গ্লোবাল করা হলো যাতে clone.js এটিকে ব্যবহার করতে পারে
 global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
@@ -278,7 +261,6 @@ async function startBots(botConfigs) {
             botConfig.username = me.username || "N/A";
             botConfig.name = botConfig.name || me.first_name || "N/A";
 
-            // 🌟 গ্লোবাল ফাংশন কল করা হলো
             global.setupBotListeners(telegramBot, botConfig); 
             global.BOT_INSTANCES.push(telegramBot);
 
@@ -317,14 +299,15 @@ async function startBots(botConfigs) {
     global.userDB = { approved: [], pending: [], banned: [] }; 
     console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
 
-    const clonedBots = await global.loadClonedBots();
+    // ক্লোনিং লজিকটি শুধুমাত্র প্রধান বট দিয়ে শুরু হবে, যেহেতু এটি সেশন-ভিত্তিক।
+    // global.loadClonedBots() কলটি বাদ দেওয়া হলো।
     const allBotConfigs = [
         {
             token: config.BOT_TOKEN,
             name: global.CONFIG.BOT_SETTINGS.NAME || "Main Bot",
             isMain: true 
-        },
-        ...clonedBots.filter(bot => bot.token !== config.BOT_TOKEN) 
+        }
+        // অন্য কোনো বট কনফিগ এখানে লোড হচ্ছে না (সেশন-ভিত্তিক)
     ];
     
     await startBots(allBotConfigs);
