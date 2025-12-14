@@ -17,7 +17,13 @@ module.exports.run = async (bot, msg, args) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
 
-    const targetUid = args[0];
+    // --- ফিক্সড: args-কে নিরাপদে অ্যাক্সেস করা হচ্ছে ---
+    const commandArgs = msg.text.split(/\s+/).slice(1);
+    const targetUid = commandArgs[1];
+    // --- ফিক্সড লজিক শেষ ---
+    
+    // পুরাতন লজিক অনুযায়ী (যদি আপনার index.js সঠিকভাবে args অ্যারে পাস করে) 
+    // const targetUid = args[0]; 
 
     if (!targetUid || isNaN(targetUid)) {
         const usageMessage = `
