@@ -1,5 +1,5 @@
 module.exports = {
-  BOT_TOKEN: "8561048024:AAFG_NLWjMlhW7rHK-OoURQCHdDpfJ7W4io",
+  BOT_TOKEN: "8447574444:AAHxyNN-92b9N8BZl9JVamX_giIwT9TnFKI",
 
   BOT_SETTINGS: {
     NAME: "✨⟦ 𝐋𝐈𝐊𝐇𝐎𝐍 𝐁𝐎𝐓 ⟧✨",
