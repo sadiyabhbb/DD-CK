@@ -10,7 +10,7 @@ module.exports.config = {
     tags: ["info", "core"]
 };
 
-// গ্লোবাল লোডিং অ্যারে বাদ দিয়ে সরাসরি global.COMMANDS ব্যবহার করা হয়েছে।
+
 
 module.exports.run = async (bot, m) => {
     const chatId = m.chat.id;
@@ -19,7 +19,7 @@ module.exports.run = async (bot, m) => {
     const args = m.text.split(/\s+/).slice(1);
     const prefix = global.PREFIX;
     
-    // সমস্ত লোড হওয়া কমান্ড মডিউল থেকে কনফিগারেশন নিয়ে অ্যারে তৈরি করা
+    
     const allCommands = Object.values(global.COMMANDS)
                                 .map(cmd => cmd.config)
                                 .sort((a, b) => a.name.localeCompare(b.name));
@@ -40,7 +40,7 @@ module.exports.run = async (bot, m) => {
             );
         }
 
-        // --- ডিটেইলস ডিসপ্লে ---
+        
         const info = `
 ╔══ 『 COMMAND: ${cmdConfig.name.toUpperCase()} 』 ═╗
 ║ 📜 Name      : ${cmdConfig.name}
@@ -68,13 +68,13 @@ module.exports.run = async (bot, m) => {
         );
     }
 
-    // --- পেজিনেশন লজিক ---
+    
     const perPage = 20;
     const totalCommands = allCommands.length;
     const totalPages = Math.ceil(totalCommands / perPage);
     const page = parseInt(args[0]) || 1;
 
-    if (totalCommands === 0) { // নতুন ফিক্স: যদি কমান্ড না থাকে
+    if (totalCommands === 0) { 
          return bot.sendMessage(
             chatId,
             `⚠️ No commands loaded. Please check the command directory.`,
