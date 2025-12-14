@@ -5,7 +5,7 @@ module.exports = {
     NAME: "✨⟦ 𝐋𝐈𝐊𝐇𝐎𝐍 𝐁𝐎𝐓 ⟧✨",
     VERSION: "2.0.1.9",
     PREFIX: "/",
-    ADMIN_IDS: ["8287206585"],
+    ADMINS: ["8287206585"],
     ADMIN_FACEBOOK_URL: "https://www.facebook.com/LIKHONAHMED009",
     ADMIN_WHATSAPP: "wa.me/+8801761838316",
     CREDIT: "LIKHON AHMED"
