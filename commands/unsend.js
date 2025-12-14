@@ -2,11 +2,11 @@ const path = require('path');
 
 module.exports.config = {
     name: "unsend",
-    credits: "LIKHON X TISHA",
+    credits: "LIKHON AHMED",
     aliases: ["delete", "del"],
     prefix: true,
     permission: 1,
-    description: "Deletes a message using command or reaction.",
+    description: "Deletes a message using command.",
     tags: ["utility", "admin"]
 };
 
@@ -38,20 +38,4 @@ module.exports.run = async (bot, msg) => {
     await bot.deleteMessage(chatId, messageId).catch(err => console.error("Self-delete error:", err.message));
 
     await deleteMessage(bot, chatId, targetMessage.message_id, senderId);
-};
-
-
-module.exports.handleMessage = async (bot, msg) => {
-    const reactionEmoji = global.CONFIG.BOT_SETTINGS.UNSEND_REACTION_EMOJI;
-    const chatId = msg.chat.id;
-    const messageId = msg.message_id;
-    const senderId = msg.from.id;
-    
-    if (msg.reply_to_message && msg.text && msg.text.trim() === reactionEmoji) {
-        const targetMessage = msg.reply_to_message;
-        
-        await bot.deleteMessage(chatId, messageId).catch(() => {}); 
-        
-        await deleteMessage(bot, chatId, targetMessage.message_id, senderId);
-    }
 };
