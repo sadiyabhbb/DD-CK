@@ -11,7 +11,7 @@ module.exports.config = {
   prefix: true,
   description: "Sends a random image link from a local JSON file.",
   category: "utility",
-  usages: "/rosmalai",
+  usages: "/bdsex",
   cooldowns: 5,
 };
 
@@ -19,12 +19,12 @@ module.exports.run = async (bot, msg, args) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
 
-    const jsonPath = path.join(__dirname, "assets_json/rosmalai.json");
+    const jsonPath = path.join(__dirname, "assets_json/bdsex.json");
     
     if (!fs.existsSync(jsonPath)) {
         return bot.sendMessage(
             chatId, 
-            "❌ ফাইল খুঁজে পাওয়া যায়নি! নিশ্চিত করুন `assets_json/rosmalai.json` ফাইলটি বিদ্যমান।", 
+            "❌ ফাইল খুঁজে পাওয়া যায়নি! নিশ্চিত করুন `assets_json/bdsex.json` ফাইলটি বিদ্যমান।", 
             { reply_to_message_id: messageId }
         );
     }
