@@ -6,12 +6,12 @@ const { Readable } = require('stream');
 module.exports.config = {
   name: "bdsex",
   version: "1.0.1",
-  credits: "LIKHON AHMED",
+  credits: "LIKHON AHMED modified for Telegram by Gemini",
   permission: 2, 
   prefix: true,
   description: "Sends a random image link from a local JSON file.",
   category: "utility",
-  usages: "/bdsex",
+  usages: "/randomimage",
   cooldowns: 5,
 };
 
@@ -19,12 +19,13 @@ module.exports.run = async (bot, msg, args) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
 
-    const jsonPath = path.join(__dirname, "assets_json/bdsex.json");
+    // ফাইলপাথ আপনার রুট ফোল্ডারে থাকা 'assets_json' ফোল্ডারকে নির্দেশ করছে
+    const jsonPath = path.join(__dirname, "..", "assets_json/bdsex.json");
     
     if (!fs.existsSync(jsonPath)) {
         return bot.sendMessage(
             chatId, 
-            "❌ ফাইল খুঁজে পাওয়া যায়নি! নিশ্চিত করুন `assets_json/bdsex.json` ফাইলটি বিদ্যমান।", 
+            "❌ ফাইল খুঁজে পাওয়া যায়নি! নিশ্চিত করুন `assets_json/randomimage.json` ফাইলটি বিদ্যমান।", 
             { reply_to_message_id: messageId }
         );
     }
@@ -59,13 +60,13 @@ module.exports.run = async (bot, msg, args) => {
             chatId,
             imageStream,
             {
-                caption: `এখানে আপনার র্যান্ডম Rosmalai ছবি! \nলিঙ্ক: ${imageLink}`,
+                caption: `এখানে আপনার র্যান্ডম ছবি! \nলিঙ্ক: ${imageLink}`,
                 reply_to_message_id: messageId
             }
         );
 
     } catch (error) {
-        console.error("❌ Rosmalai Image Error:", error.message);
+        console.error("❌ Random Image Error:", error.message);
         return bot.sendMessage(
             chatId, 
             `❌ ছবিটি লোড করা সম্ভব হয়নি। লিঙ্কে সমস্যা থাকতে পারে: ${imageLink}`, 
