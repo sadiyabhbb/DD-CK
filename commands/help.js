@@ -5,7 +5,7 @@ module.exports.config = {
   version: "1.0.3",
   credits: "LIKHON AHMED modified by Gemini",
   permission: 0, 
-  prefix: false, 
+  prefix: true, 
   description: "Shows the command list and usage details.",
   category: "utility",
   usages: "help [pageNumber | commandName]",
