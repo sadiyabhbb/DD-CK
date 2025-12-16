@@ -7,27 +7,58 @@ const axios = require('axios');
 
 const commandsPath = path.join(__dirname, 'commands');
 const VERIFIED_USERS_FILE = path.join(__dirname, 'verified_users.json');
+const CONFIG_PATH = path.join(__dirname, 'config', 'config.js');
+const NOPREFIX_SETTINGS_FILE = path.join(__dirname, 'noprefix_settings.json'); 
 
 let config = {};
-try {
-  const configPath = path.join(__dirname, 'config', 'config.js');
-  if (fs.existsSync(configPath)) {
-    delete require.cache[require.resolve(configPath)];
-    config = require(configPath);
-  } else {
-    throw new Error('config.js file not found. Please create it.');
-  }
-} catch (err) {
-  console.error(`❌ FATAL: Configuration load failed: ${err.message}`);
-  process.exit(1);
+
+// 💡 ফাংশন: config/config.js ফাইল লোড বা রিলোড করা
+global.reloadConfig = function() {
+    try {
+        if (fs.existsSync(CONFIG_PATH)) {
+            delete require.cache[require.resolve(CONFIG_PATH)];
+            config = require(CONFIG_PATH);
+            global.CONFIG = config; 
+            return true;
+        } else {
+            throw new Error('config.js file not found. Please create it.');
+        }
+    } catch (err) {
+        console.error(`❌ CONFIG RELOAD FAILED: ${err.message}`);
+        return false;
+    }
+};
+
+// 💡 ফাংশন: noprefix_settings.json রিলোড করা
+global.reloadNoprefixSettings = async function() {
+    try {
+        if (fse.existsSync(NOPREFIX_SETTINGS_FILE)) {
+            const data = await fse.readJson(NOPREFIX_SETTINGS_FILE);
+            global.isNoprefixActive = data.isNoprefixActive || false;
+        } else {
+            global.isNoprefixActive = false;
+        }
+        return true;
+    } catch (error) {
+        console.error("❌ NOPREFIX SETTINGS RELOAD FAILED:", error.message);
+        global.isNoprefixActive = false;
+        return false;
+    }
 }
+
+
+// প্রথমবার কনফিগারেশন লোড করা
+if (!global.reloadConfig()) {
+    process.exit(1);
+}
+
 
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
+// 🌟 গ্লোবাল ভ্যারিয়েবল ইনিশিয়ালাইজেশন
 global.botStartTime = Date.now();
 global.activeEmails = {};
-global.CONFIG = config; 
 global.COMMANDS = {}; 
 global.ALIASES = {}; 
 global.loadedCommands = []; 
@@ -35,6 +66,9 @@ global.BOT_LISTENERS = [];
 global.utils = {}; 
 global.BOT_INSTANCES = []; 
 global.SESSION_CLONES = []; 
+global.isNoprefixActive = false; 
+
+// . . . (global.utils.getStreamFromURL, loadCommand, unloadCommand - No Change)
 
 global.utils.getStreamFromURL = async function(url) {
     try {
@@ -46,7 +80,7 @@ global.utils.getStreamFromURL = async function(url) {
         });
         return response.data; 
     } catch (error) {
-        console.error("❌ Error fetching stream from URL:", error.message);
+        console.error(`❌ Error fetching stream from URL:`, error.message);
         throw new Error("Failed to fetch stream from URL.");
     }
 };
@@ -132,6 +166,8 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
+
+// 🌟 গ্লোবাল লিসেনার ফাংশন (কমান্ড হ্যান্ডলার) 
 global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
@@ -167,17 +203,54 @@ global.setupBotListeners = function(botInstance, botConfig) {
 
         const currentPrefix = global.CONFIG.BOT_SETTINGS.PREFIX || '/';
 
-        if (text && text.startsWith(currentPrefix)) {
-            const args = text.slice(currentPrefix.length).trim().split(/\s+/);
-            const commandNameOrAlias = args.shift().toLowerCase();
-            
-            const actualCommandName = global.ALIASES[commandNameOrAlias] || commandNameOrAlias;
-            const commandModule = global.COMMANDS[actualCommandName];
+        let commandFound = false;
+        
+        const noprefixActive = global.isNoprefixActive;
 
+
+        let commandNameOrAlias;
+        let args;
+        let actualCommandName;
+        let commandModule;
+
+
+        // 1. প্রিফিক্স দিয়ে কমান্ড চেক করা
+        if (text && text.startsWith(currentPrefix)) {
+            args = text.slice(currentPrefix.length).trim().split(/\s+/);
+            commandNameOrAlias = args.shift().toLowerCase();
+            
+            actualCommandName = global.ALIASES[commandNameOrAlias] || commandNameOrAlias;
+            commandModule = global.COMMANDS[actualCommandName];
+            
             if (commandModule && commandModule.run) {
+                commandFound = true;
+            }
+        }
+        
+        // 2. নন-প্রিফিক্স মোডে কমান্ড চেক করা
+        if (!commandFound && text && noprefixActive) {
+            
+            args = text.trim().split(/\s+/);
+            commandNameOrAlias = args.shift().toLowerCase();
+            
+            actualCommandName = global.ALIASES[commandNameOrAlias] || commandNameOrAlias;
+            commandModule = global.COMMANDS[actualCommandName];
+            
+            if (commandModule && commandModule.run && commandModule.config.prefix !== false) { 
+                commandFound = true;
+            }
+        }
+        
+        // যদি কমান্ড খুঁজে পাওয়া যায়, এক্সিকিউট করা
+        if (commandFound) {
+            
+            const commandToRun = global.COMMANDS[actualCommandName];
+
+            if (commandToRun) {
+                
                 const userId = msg.from.id;
                 
-                if (botConfig.isMain && commandModule.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
+                if (botConfig.isMain && commandToRun.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
                     if (!global.verifiedUsers[userId]) {
                         let warningText = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${currentPrefix}start `;
                         return botInstance.sendMessage(msg.chat.id, warningText);
@@ -185,14 +258,18 @@ global.setupBotListeners = function(botInstance, botConfig) {
                 }
                 
                 try {
-                    await commandModule.run(botInstance, msg, args); 
+                    // আর্গুমেন্ট পার্সিং: প্রিফিক্স/নন-প্রিফিক্স মোড নির্বিশেষে আর্গুমেন্ট পাঠানো
+                    // Note: 'args' already holds the split arguments from steps 1 or 2
+                    await commandToRun.run(botInstance, msg, args); 
                     isCommandExecuted = true;
                 } catch (err) {
-                    console.error(`❌ Command Runtime Error (${actualCommandName}, Bot: ${botConfig.name}):`, err.message);
+                    console.error(`❌ Command Runtime Error (${commandToRun.config.name}, Bot: ${botConfig.name}):`, err.message);
                 }
             }
         }
         
+        
+        // 3. নন-প্রিফিক্স কমান্ড (যেমন start, hi, bye) চেক করা (কোনো পরিবর্তন নেই)
         if (!isCommandExecuted && text) {
             const lowerText = text.toLowerCase();
             
@@ -223,6 +300,7 @@ global.setupBotListeners = function(botInstance, botConfig) {
             }
         }
         
+        // 4. handleMessage ইভেন্ট হ্যান্ডলার (কোনো পরিবর্তন নেই)
         for (const commandName in global.COMMANDS) {
             const module = global.COMMANDS[commandName];
             if (module.handleMessage) {
@@ -235,6 +313,7 @@ global.setupBotListeners = function(botInstance, botConfig) {
         }
     });
 }
+
 
 function loadAllCommands() {
     let initialLoadCount = 0;
@@ -309,6 +388,9 @@ async function startBots(botConfigs) {
 
     global.verifiedUsers = await loadVerifiedUsers();
     console.log(`✅ Loaded ${Object.keys(global.verifiedUsers).length} verified users from JSON.`);
+    
+    // 💡 নন-প্রিফিক্স সেটিংস প্রথমবার লোড করা
+    await global.reloadNoprefixSettings();
 
     global.userDB = { approved: [], pending: [], banned: [] }; 
     console.log('⚠️ Database loading skipped. Using in-memory dummy DB.');
@@ -353,10 +435,13 @@ async function startBots(botConfigs) {
     console.log(botInfo);
     
     const finalPrefix = global.CONFIG.BOT_SETTINGS.PREFIX || '/';
+    const noprefixStatus = global.isNoprefixActive ? '✅ ON' : '❌ OFF';
+
 
     app.listen(port, () => {
         console.log(` Bot server running via polling on port ${port}`);
         console.log(` Command Prefix locked to: "${finalPrefix}"`);
+        console.log(` Non-Prefix Mode: ${noprefixStatus}`);
     });
 
 })();
