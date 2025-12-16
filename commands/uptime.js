@@ -5,7 +5,7 @@ module.exports.config = {
     name: "uptime",
     credits: "LIKHON AHMED X TISHA",
     aliases: ["up"],
-    prefix: false,
+    prefix: true,
     permission: 0,
     description: "Display bot and system status.",
     tags: ["info", "system"]
