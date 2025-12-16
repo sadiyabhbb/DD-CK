@@ -5,13 +5,13 @@ const configPath = path.join(__dirname, '..', 'config', 'config.js');
 
 module.exports.config = {
   name: "prefix",
-  version: "1.0.4", 
-  credits: "LIKHON X TISHA",
+  version: "1.0.5", 
+  credits: "Dipto modified for Telegram Prefix by Gemini",
   permission: 2, 
-  prefix: false,
+  prefix: true,
   description: "Shows the current prefix and allows changing it.",
   category: "utility",
-  usages: "prefix [new prefix]",
+  usages: "/prefix [new prefix]",
   cooldowns: 5,
 };
 
@@ -56,26 +56,19 @@ module.exports.run = async (bot, msg, args) => {
         }
         
         try {
+            // 1. ফাইলে পরিবর্তন সেভ করা
             currentConfig.BOT_SETTINGS.PREFIX = newPrefix;
-            
-            if (global.config && global.config.BOT_SETTINGS) {
-                 global.config.BOT_SETTINGS.PREFIX = newPrefix;
-            }
-
             const newContent = `module.exports = ${JSON.stringify(currentConfig, null, 2)};\n`;
-
             fs.writeFileSync(configPath, newContent, 'utf8');
+            
+            // 2. 💡 রানটাইমে কনফিগারেশন রিলোড করা
+            global.reloadConfig();
 
             await bot.sendMessage(
                 chatId, 
-                `✅ **প্রিফিক্স সফলভাবে পরিবর্তন করা হয়েছে।**\nনতুন প্রিফিক্স: \`${newPrefix}\`\n\n🚀 **নতুন প্রিফিক্স কার্যকর করতে বট রিস্টার্ট হচ্ছে...**`,
+                `✅ **প্রিফিক্স সফলভাবে পরিবর্তন করা হয়েছে।**\nনতুন প্রিফিক্স: \`${newPrefix}\`\n\n✨ **পরিবর্তনগুলি কার্যকর করা হয়েছে (রিস্টার্ট ছাড়াই)।**`,
                 { reply_to_message_id: messageId, parse_mode: 'Markdown' }
             );
-            
-            // 💡 প্রিফিক্স কার্যকর করার জন্য প্রোগ্রাম্যাটিকভাবে বট বন্ধ করা (যা হোস্টিং দ্বারা রিস্টার্ট হবে)
-            setTimeout(() => {
-                process.exit(1); 
-            }, 3000); 
 
         } catch (error) {
             console.error("❌ Prefix change failed:", error);
