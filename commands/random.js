@@ -6,7 +6,7 @@ const { Readable } = require('stream');
 module.exports.config = {
   name: "random",
   version: "1.0.3",
-  credits: "LIKHON AHMED modified for Telegram by Gemini",
+  credits: "LIKHON AHMED",
   permission: 0, 
   prefix: true,
   description: "Sends a random image link from a local random.json file.",
