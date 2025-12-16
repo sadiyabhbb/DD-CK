@@ -5,10 +5,10 @@ const configPath = path.join(__dirname, '..', 'config', 'config.js');
 
 module.exports.config = {
   name: "prefix",
-  version: "1.0.2",
+  version: "1.0.3",
   credits: "Dipto modified for Telegram Prefix by Gemini",
   permission: 2, 
-  prefix: true,
+  prefix: false,
   description: "Shows the current prefix and allows changing it.",
   category: "utility",
   usages: "/prefix [new prefix]",
@@ -32,12 +32,16 @@ module.exports.run = async (bot, msg, args) => {
     }
     
     const currentPrefix = currentConfig.BOT_SETTINGS.PREFIX || '/';
+    
+    const ownerID = currentConfig.OWNER.ID.toString();
+    const senderID = msg.from.id.toString();
 
     if (args.length > 0) {
-        if (module.exports.config.permission > 0 && !msg.isOwner) { 
+        
+        if (module.exports.config.permission > 0 && senderID !== ownerID) { 
              return bot.sendMessage(
                 chatId, 
-                "❌ **প্রিফিক্স পরিবর্তন করতে আপনি অনুমোদিত নন।** এই কমান্ডটি শুধুমাত্র অ্যাডমিন/মালিকের জন্য।", 
+                "❌ **প্রিফিক্স পরিবর্তন করতে আপনি অনুমোদিত নন।** এই কমান্ডটি শুধুমাত্র মালিকের জন্য।", 
                 { reply_to_message_id: messageId }
             );
         }
