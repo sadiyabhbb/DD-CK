@@ -8,7 +8,7 @@ module.exports.config = {
   version: "1.0.5", 
   credits: "Dipto modified for Telegram Prefix by Gemini",
   permission: 2, 
-  prefix: true,
+  prefix: false,
   description: "Shows the current prefix and allows changing it.",
   category: "utility",
   usages: "/prefix [new prefix]",
