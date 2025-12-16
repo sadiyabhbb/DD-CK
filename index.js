@@ -12,6 +12,7 @@ let config = {};
 try {
   const configPath = path.join(__dirname, 'config', 'config.js');
   if (fs.existsSync(configPath)) {
+    delete require.cache[require.resolve(configPath)];
     config = require(configPath);
   } else {
     throw new Error('config.js file not found. Please create it.');
@@ -24,11 +25,9 @@ try {
 const app = express();
 const port = process.env.PORT || config.PORT || 8080; 
 
-// 🌟 গ্লোবাল ভ্যারিয়েবল ইনিশিয়ালাইজেশন
 global.botStartTime = Date.now();
 global.activeEmails = {};
-global.CONFIG = config;
-global.PREFIX = config.BOT_SETTINGS.PREFIX || "/"; 
+global.CONFIG = config; 
 global.COMMANDS = {}; 
 global.ALIASES = {}; 
 global.loadedCommands = []; 
@@ -52,7 +51,6 @@ global.utils.getStreamFromURL = async function(url) {
     }
 };
 
-// 🌟 কমান্ড লোডিং ফাংশন (শুধুমাত্র গ্লোবাল সেট তৈরি করবে)
 global.loadCommand = function(commandName) {
     const filename = `${commandName}.js`;
     const filePath = path.join(commandsPath, filename);
@@ -134,7 +132,6 @@ global.saveVerifiedUsers = async function() {
     }
 };
 
-// 🌟 গ্লোবাল লিসেনার ফাংশন (Clone Support-এর জন্য গ্লোবালি অ্যাক্সেসযোগ্য)
 global.setupBotListeners = function(botInstance, botConfig) {
     
     botInstance.on("polling_error", (error) => {
@@ -168,8 +165,10 @@ global.setupBotListeners = function(botInstance, botConfig) {
         const text = msg.text;
         let isCommandExecuted = false;
 
-        if (text && text.startsWith(global.PREFIX)) {
-            const args = text.slice(global.PREFIX.length).trim().split(/\s+/);
+        const currentPrefix = global.CONFIG.BOT_SETTINGS.PREFIX || '/';
+
+        if (text && text.startsWith(currentPrefix)) {
+            const args = text.slice(currentPrefix.length).trim().split(/\s+/);
             const commandNameOrAlias = args.shift().toLowerCase();
             
             const actualCommandName = global.ALIASES[commandNameOrAlias] || commandNameOrAlias;
@@ -180,7 +179,7 @@ global.setupBotListeners = function(botInstance, botConfig) {
                 
                 if (botConfig.isMain && commandModule.config.name !== "start" && Array.isArray(global.CONFIG.REQUIRED_CHATS) && global.CONFIG.REQUIRED_CHATS.length > 0) {
                     if (!global.verifiedUsers[userId]) {
-                        let warningText = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${global.PREFIX}start `;
+                        let warningText = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡𝐞 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${currentPrefix}start `;
                         return botInstance.sendMessage(msg.chat.id, warningText);
                     }
                 }
@@ -237,7 +236,6 @@ global.setupBotListeners = function(botInstance, botConfig) {
     });
 }
 
-// 🌟 এই ফাংশনটি শুধুমাত্র একবার কল হবে, সব কমান্ড লোড করার জন্য।
 function loadAllCommands() {
     let initialLoadCount = 0;
     if (fs.existsSync(commandsPath)) {
@@ -258,7 +256,6 @@ function loadAllCommands() {
     console.log(`[ CORE ] Loaded ${initialLoadCount} global command(s).`);
 }
 
-// 🌟 প্রতিটি বট ইনস্ট্যান্সের জন্য initCallback কল করা।
 function initializeBotCallbacks(telegramBot) {
     for (const commandName in global.COMMANDS) {
         const commandModule = global.COMMANDS[commandName];
@@ -308,7 +305,6 @@ async function startBots(botConfigs) {
 
 
 (async () => {
-    // 1. সমস্ত গ্লোবাল কমান্ডস লোড করুন
     loadAllCommands();
 
     global.verifiedUsers = await loadVerifiedUsers();
@@ -325,7 +321,6 @@ async function startBots(botConfigs) {
         }
     ];
     
-    // 2. বটগুলি শুরু করুন এবং কমান্ডস লিসেনার যুক্ত করুন
     await startBots(allBotConfigs);
     
     const botUsername = global.bot ? global.bot.options.username || "N/A" : "N/A";
@@ -356,16 +351,16 @@ async function startBots(botConfigs) {
 
     console.log(adminInfo);
     console.log(botInfo);
-
+    
+    const finalPrefix = global.CONFIG.BOT_SETTINGS.PREFIX || '/';
 
     app.listen(port, () => {
         console.log(` Bot server running via polling on port ${port}`);
-        console.log(` Command Prefix locked to: "${global.PREFIX}"`);
+        console.log(` Command Prefix locked to: "${finalPrefix}"`);
     });
 
 })();
 
-// 🌟🌟🌟 এই নতুন অংশটি ক্লোন সাপোর্ট-এর জন্য যুক্ত করা হয়েছে 🌟🌟🌟
 module.exports = {
     setupBotListeners: global.setupBotListeners
 };
