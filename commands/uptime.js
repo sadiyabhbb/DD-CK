@@ -40,7 +40,7 @@ module.exports.run = async (bot, msg) => {
         );
 
         const output = `
-${transformText("╭━━━━━━❰ 🌟 BADOL-BOT 🌟 ❱━━━━━━╮")}
+${transformText("╭━━━━━━❰ 🌟 LIKHON BOT 🌟 ❱━━━━━━╮")}
 ${transformText("│")} 👤 ${transformText("Author")}: ${author}
 ${transformText("│")} 🤖 ${transformText("Bot Name")}: ${botName}
 ${transformText("│")} ⏹ ${transformText("Prefix")}: ${prefix}
