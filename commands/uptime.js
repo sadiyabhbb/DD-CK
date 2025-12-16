@@ -15,11 +15,11 @@ module.exports.run = async (bot, msg) => {
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
 
-    const imageUrl = "https://files.catbox.moe/jzc9l3.jpg";
+    const imageUrl = "https://files.catbox.moe/sn7rw9.jpg";
 
     const author = transformText("LIKHON AHMED X TISHA");
-    const botName = transformText(global.CONFIG?.BOT_SETTINGS?.NAME || "BADOL BOT");
-    const prefix = transformText(global.PREFIX || "!");
+    const botName = transformText(global.CONFIG?.BOT_SETTINGS?.NAME || "LIKHON BOT");
+    const prefix = transformText(global.PREFIX || "/");
     const bdTime = transformText(
         moment().tz("Asia/Dhaka").format("MM/DD/YYYY, h:mm:ss A")
     );
