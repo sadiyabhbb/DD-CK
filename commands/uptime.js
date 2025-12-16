@@ -3,7 +3,7 @@ const moment = require('moment-timezone');
 
 module.exports.config = {
     name: "uptime",
-    credits: "LIKHON X TISHA",
+    credits: "LIKHON AHMED X TISHA",
     aliases: ["up"],
     prefix: true,
     permission: 0,
