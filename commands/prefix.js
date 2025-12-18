@@ -6,7 +6,7 @@ const configPath = path.join(__dirname, '..', 'config', 'config.js');
 module.exports.config = {
   name: "prefix",
   version: "1.0.5",
-  credits: "LIKHON AHMED",
+  credits: "Dipto modified for Telegram Prefix by Gemini",
   permission: 2,
   prefix: false,
   description: "Shows the current prefix and allows changing it.",
@@ -64,7 +64,7 @@ module.exports.run = async (bot, msg, args) => {
 
       await bot.sendMessage(
         chatId,
-        `✅ **Prefix updated successfully.**\n\nNew prefix: \`${newPrefix}\`,
+        `✅ **Prefix updated successfully.**\nNew prefix: \`${newPrefix}\`\n\n✨ **Changes applied without restart.**`,
         { reply_to_message_id: messageId, parse_mode: "Markdown" }
       );
     } catch (error) {
@@ -78,7 +78,7 @@ module.exports.run = async (bot, msg, args) => {
   } else {
     return bot.sendMessage(
       chatId,
-      `✨ **Prefix:** \`${currentPrefix}\``,
+      `✨ **Current prefix:** \`${currentPrefix}\``,
       { reply_to_message_id: messageId, parse_mode: "Markdown" }
     );
   }
