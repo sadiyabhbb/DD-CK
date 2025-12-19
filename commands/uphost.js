@@ -20,10 +20,8 @@ async function loadData() {
     try {
         if (fse.existsSync(DATA_FILE)) {
             hostedUrls = await fse.readJson(DATA_FILE);
-            
         } else {
             hostedUrls = [];
-            
         }
     } catch (e) {
         console.error("❌ Uphost: Error loading data:", e.message);
@@ -47,7 +45,7 @@ async function checkUrlStatus(url) {
         if (statusCode >= 200 && statusCode < 300) {
             return { status: "LIVE (2xx)", emoji: "🟢" };
         } else if (statusCode >= 300 && statusCode < 400) {
-             return { status: "Redirect (3xx)", emoji: "🟡" };
+            return { status: "Redirect (3xx)", emoji: "🟡" };
         } else {
             return { status: `Error (${statusCode})`, emoji: "🔴" };
         }
@@ -72,24 +70,24 @@ module.exports.run = async (bot, msg) => {
     if (command === 'add') {
         const url = args[1];
         if (!url || !url.startsWith('http')) {
-            return bot.sendMessage(chatId, "⚠️ দয়া করে একটি বৈধ URL দিন। উদাহরণ: `/uphost add https://example.com`", { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, "⚠️ Please provide a valid URL. Example: `/uphost add https://example.com`", { reply_to_message_id: messageId });
         }
 
         if (hostedUrls.some(item => item.url === url)) {
-            return bot.sendMessage(chatId, "❌ এই URL টি ইতিমধ্যেই তালিকায় আছে।", { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, "❌ This URL is already in the list.", { reply_to_message_id: messageId });
         }
 
         hostedUrls.push({ url: url, addedBy: msg.from.id, addedOn: Date.now() });
         await saveData();
-        return bot.sendMessage(chatId, `✅ URL যুক্ত করা হয়েছে: ${url}`, { reply_to_message_id: messageId });
+        return bot.sendMessage(chatId, `✅ URL added: ${url}`, { reply_to_message_id: messageId });
     }
 
     else if (command === 'list') {
         if (hostedUrls.length === 0) {
-            return bot.sendMessage(chatId, "ℹ️ কোনো URL হোস্টিংয়ের জন্য যুক্ত করা হয়নি।", { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, "ℹ️ No URLs have been added for hosting.", { reply_to_message_id: messageId });
         }
 
-        let listMessage = "🌟 **হোস্টেড URL স্ট্যাটাস** 🌟\n\n";
+        let listMessage = "🌟 **Hosted URL Status** 🌟\n\n";
         
         const statusChecks = hostedUrls.map(item => checkUrlStatus(item.url));
         const results = await Promise.all(statusChecks);
@@ -110,7 +108,7 @@ module.exports.run = async (bot, msg) => {
         let indexToRemove = -1;
 
         if (hostedUrls.length === 0) {
-             return bot.sendMessage(chatId, "ℹ️ কোনো URL নেই, তাই রিমুভ করার কিছু নেই।", { reply_to_message_id: messageId });
+             return bot.sendMessage(chatId, "ℹ️ No URLs exist to remove.", { reply_to_message_id: messageId });
         }
         
         const indexNum = parseInt(identifier);
@@ -131,9 +129,9 @@ module.exports.run = async (bot, msg) => {
         if (indexToRemove >= 0) {
             const removedUrl = hostedUrls.splice(indexToRemove, 1)[0].url;
             await saveData();
-            return bot.sendMessage(chatId, `🗑️ সফলভাবে সরানো হয়েছে: ${removedUrl}`, { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, `🗑️ Successfully removed: ${removedUrl}`, { reply_to_message_id: messageId });
         } else {
-            return bot.sendMessage(chatId, "❌ ভুল ইনপুট। রিমুভ করার জন্য সঠিক নম্বর বা সম্পূর্ণ URL দিন।", { reply_to_message_id: messageId });
+            return bot.sendMessage(chatId, "❌ Invalid input. Provide the correct number or full URL to remove.", { reply_to_message_id: messageId });
         }
     }
 
