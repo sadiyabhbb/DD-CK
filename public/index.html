@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Profile Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        /* Live Time Style */
+        .time {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            width: 100%;
+            font-size: 14px;
+            color: #00ffea;
+            text-shadow: 0 0 10px #00ffea;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        /* Card Container */
+        .card {
+            position: relative;
+            width: 320px;
+            min-height: 520px;
+            background: #16213e;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0, 255, 234, 0.1);
+        }
+
+        .card:hover {
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            transform: translateY(-10px);
+            border: 1px solid rgba(0, 255, 234, 0.4);
+        }
+
+        /* Header / Cover Area */
+        .header {
+            position: relative;
+            height: 160px;
+            width: 100%;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0,255,255,0.1) 0%, transparent 70%);
+            animation: glow 10s linear infinite;
+        }
+
+        @keyframes glow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Profile Image */
+        .profile-img {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 4px solid #00ffea;
+            position: absolute;
+            bottom: -65px;
+            left: 50%;
+            transform: translateX(-50%);
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+            background: #16213e;
+            z-index: 2;
+        }
+
+        /* Content Area */
+        .content {
+            padding: 75px 25px 30px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .name {
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(0, 255, 234, 0.5);
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00ffea;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #b0b0cc;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        /* Social Links */
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .social-links a {
+            width: 45px;
+            height: 45px;
+            background: rgba(0, 255, 234, 0.05);
+            border: 1px solid #00ffea;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #00ffea;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .social-links a:hover {
+            background: #00ffea;
+            color: #16213e;
+            box-shadow: 0 0 20px #00ffea;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="time" id="live-time">Loading time...</div>
+
+    <div class="card">
+        <div class="header">
+            <img src="https://files.catbox.moe/rnwibe.jpg" alt="Profile" class="profile-img">
+        </div>
+        
+        <div class="content">
+            <div class="info">
+                <h2 class="name">Your Name</h2>
+                <p class="title">Developer</p>
+                <p class="description">
+                    Telegram bot developer | Creative coder | Peace lover ✌️<br>
+                    Always building something cool in the dark with neon vibes.
+                </p>
+            </div>
+
+            <div class="social-links">
+                <a href="https://t.me/username" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://github.com/username" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://www.instagram.com/username/" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const timeEl = document.getElementById("live-time");
+            const now = new Date();
+
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+
+            timeEl.textContent = `${hours}:${minutes} ${ampm} | ${dayName}, ${monthName} ${date}`;
+        }
+
+        // Update every 30 seconds instead of 1s to save performance since we don't show seconds
+        setInterval(updateTime, 30000);
+        updateTime();
+    </script>
+</body>
+</html>
