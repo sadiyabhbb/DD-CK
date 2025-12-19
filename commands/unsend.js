@@ -6,7 +6,7 @@ module.exports.config = {
     aliases: ["delete", "del"],
     prefix: true,
     permission: 1,
-    description: "Deletes a message using command.",
+    description: "Deletes a message using this command.",
     tags: ["utility", "admin"]
 };
 
@@ -17,7 +17,7 @@ async function deleteMessage(bot, chatId, messageId, senderId) {
     } catch (e) {
         console.error(`❌ Failed to delete message ${messageId} in chat ${chatId}:`, e.message);
         if (senderId) {
-             const errorMsg = "❌ মেসেজটি ডিলিট করা সম্ভব হয়নি। নিশ্চিত করুন যে বটটির 'Delete Messages' পারমিশন আছে এবং মেসেজটি খুব পুরনো নয়।";
+             const errorMsg = "❌ Could not delete the message. Make sure the bot has 'Delete Messages' permission and the message is not too old.";
              bot.sendMessage(chatId, errorMsg, { reply_to_message_id: messageId });
         }
         return false;
@@ -32,7 +32,7 @@ module.exports.run = async (bot, msg) => {
     const targetMessage = msg.reply_to_message;
 
     if (!targetMessage) {
-        return bot.sendMessage(chatId, "⚠️ একটি মেসেজে রিপ্লাই করে /unsend দিন, যা আপনি ডিলিট করতে চান।", { reply_to_message_id: messageId });
+        return bot.sendMessage(chatId, "⚠️ Please reply to the message you want to delete and then use /unsend.", { reply_to_message_id: messageId });
     }
     
     await bot.deleteMessage(chatId, messageId).catch(err => console.error("Self-delete error:", err.message));
