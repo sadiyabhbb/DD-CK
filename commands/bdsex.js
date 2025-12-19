@@ -8,7 +8,7 @@ module.exports.config = {
   credits: "LIKHON AHMED",
   permission: 0,
   prefix: true,
-  description: "Send random image from json",
+  description: "Send a random image from JSON",
   category: "utility",
   usages: "/random",
   cooldowns: 5,
@@ -22,14 +22,14 @@ module.exports.run = async (bot, msg) => {
   let links;
   try {
     links = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
-  } catch (e) {
-    return bot.sendMessage(chatId, "❌ bdsex.json পড়া যাচ্ছে না!", {
+  } catch {
+    return bot.sendMessage(chatId, "❌ Unable to read bdsex.json!", {
       reply_to_message_id: messageId,
     });
   }
 
   if (!Array.isArray(links) || links.length === 0) {
-    return bot.sendMessage(chatId, "⚠️ JSON ফাইলে কোনো লিঙ্ক নেই!", {
+    return bot.sendMessage(chatId, "⚠️ No links found in the JSON file!", {
       reply_to_message_id: messageId,
     });
   }
@@ -47,17 +47,17 @@ module.exports.run = async (bot, msg) => {
 
     if (type.startsWith("image/")) {
       await bot.sendPhoto(chatId, Buffer.from(res.data), {
-        caption: "🖼️ BDSex",
+        caption: "🖼️ LewRa 🙊🔥",
         reply_to_message_id: messageId,
       });
     } else {
       await bot.sendPhoto(chatId, imageLink, {
-        caption: "🖼️ BDSex",
+        caption: "🖼️ LewRa Ne 🙊🔥",
         reply_to_message_id: messageId,
       });
     }
-  } catch (err) {
-    return bot.sendMessage(chatId, `❌ ছবি পাঠানো যায়নি\n${imageLink}`, {
+  } catch {
+    return bot.sendMessage(chatId, `❌ Failed to send image\n${imageLink}`, {
       reply_to_message_id: messageId,
     });
   }
