@@ -7,7 +7,7 @@ module.exports.config = {
   permission: 0,
   prefix: true,
   category: "media",
-  credits: "Mohammad Nayan | Fixed by Gemini",
+  credits: "LIKHON AHMED",
   description: "10 Results, MB Size, Preview Fix & Owner Button",
   usages: "xnx <keyword>",
   cooldowns: 5,
