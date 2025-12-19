@@ -56,11 +56,11 @@ module.exports = {
       if (!global.verifiedUsers) global.verifiedUsers = {};
       global.verifiedUsers[userId] = true;
       
-      // *** JSON সেভ লজিক যুক্ত করা হয়েছে (কমান্ড রান করার সময়) ***
+      
       if (global.saveVerifiedUsers) {
         await global.saveVerifiedUsers(); 
       }
-      // ********************************************************
+      
 
       const welcomeMessage = `
 ✨ **Welcome to ${botName}!** ✨
