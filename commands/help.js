@@ -3,7 +3,7 @@ const path = require('path');
 module.exports.config = {
   name: "help",
   version: "1.0.3",
-  credits: "LIKHON AHMED modified by Gemini",
+  credits: "LIKHON AHMED",
   permission: 0, 
   prefix: true, 
   description: "Shows the command list and usage details.",
