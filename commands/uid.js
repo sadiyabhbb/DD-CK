@@ -9,7 +9,7 @@ module.exports.config = {
   aliases: ["id", "userid", "whois"],
   prefix: true,
   permission: 0,
-  description: "Displays user details with profile picture.",
+  description: "Displays user details along with profile picture.",
   tags: ["utility", "info"]
 };
 
@@ -22,7 +22,7 @@ module.exports.run = async (bot, msg) => {
     : msg.from;
 
   if (!targetUser) {
-    return bot.sendMessage(chatId, "❌ ইউজার পাওয়া যায়নি।", {
+    return bot.sendMessage(chatId, "❌ User not found.", {
       reply_to_message_id: replyId
     });
   }
@@ -34,13 +34,12 @@ module.exports.run = async (bot, msg) => {
     : "N/A";
 
   const caption =
-    `👤 𝐔𝐬𝐞𝐫 𝐈𝐧𝐟𝐨:\n` +
-    ` 🪪 𝐍𝐚𝐦𝐞: *${name}*\n` +
-    ` 🔗 𝐔𝐬𝐞𝐫𝐧𝐚𝐦𝐞: *${username}*\n` +
-    ` 🆔 𝐔𝐢𝐝: \`${userId}\``;
+    `👤 *User Info:*\n` +
+    ` 🪪 Name: *${name}*\n` +
+    ` 🔗 Username: *${username}*\n` +
+    ` 🆔 UID: \`${userId}\``;
 
   try {
-    
     const photos = await bot.getUserProfilePhotos(userId, { limit: 1 });
 
     if (photos.total_count > 0) {
@@ -53,10 +52,9 @@ module.exports.run = async (bot, msg) => {
       });
     }
 
-    
     return bot.sendMessage(
       chatId,
-      caption + `\n\n\\(⚠️ প্রোফাইল পিকচার নেই\\)`,
+      caption + `\n\n\\(⚠️ No profile picture\\)`,
       {
         parse_mode: "MarkdownV2",
         reply_to_message_id: replyId
@@ -67,7 +65,7 @@ module.exports.run = async (bot, msg) => {
     console.error("UID Error:", err.message);
     return bot.sendMessage(
       chatId,
-      caption + `\n\n\\(❌ তথ্য আনতে ব্যর্থ\\)`,
+      caption + `\n\n\\(❌ Failed to fetch user info\\)`,
       {
         parse_mode: "MarkdownV2",
         reply_to_message_id: replyId
