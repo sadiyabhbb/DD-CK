@@ -1,4 +1,4 @@
-const TelegramBot = require('node-telegram-bot-api');
+Const TelegramBot = require('node-telegram-bot-api');
 
 const fs = require('fs');
 
@@ -319,25 +319,24 @@ global.setupBotListeners = function(botInstance, botConfig) {
         let groupName = chatType === 'private' ? 'Private Chat' : (msg.chat.title || 'Group Chat');
 
         const logMessage = `
-
-╔════════════ [${botConfig.name}] ${formattedTime} ════════════╗
-
-║ Message ID: ${msg.message_id} 
-
-║ User Name: ${userName} 
-
-║ Group Name: ${groupName} 
-
-║ Group ID: ${msg.chat.id} 
-
-║ Message: ${msg.text || '[Non-text Message]'} 
-
-║ Time: ${formattedDate}, ${formattedTime} 
-
-╚══════════════════════════════════╝
-
+╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃          ${botConfig.name}          ┃
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  🧾 𝐌𝐄𝐒𝐒𝐀𝐆𝐄 𝐈𝐃 : ${msg.message_id}
+┃
+┃  👤 𝐔𝐒𝐄𝐑 𝐍𝐀𝐌𝐄 : ${userName}
+┃
+┃  ⛩️ 𝐆𝐑𝐎𝐔𝐏 𝐍𝐀𝐌𝐄 : ${groupName}
+┃
+┃  🆔 𝐆𝐑𝐎𝐔𝐏 𝐈𝐃  : ${msg.chat.id}
+┃
+┃  📜 𝐌𝐄𝐒𝐒𝐀𝐆𝐄  : ${msg.text || '[Non-text Message]'}
+┃
+┃  ⌚ 𝐓𝐈𝐌𝐄 : ${formattedDate}, ${formattedTime}
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  🤸🏽‍♂️ 𝐁𝐎𝐓 𝐃𝐄𝐕𝐄𝐋𝐎𝐏𝐄𝐃 𝐁𝐘 𝐋𝐈𝐊𝐇𝐎𝐍
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
-
         console.log(logMessage);
 
         
@@ -432,7 +431,7 @@ global.setupBotListeners = function(botInstance, botConfig) {
 
                     if (!global.verifiedUsers[userId]) {
 
-                        let warningText = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓𝐡ের 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨𝐫 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${currentPrefix}start `;
+                        let warningText = `⚠️ 𝐈𝐟 𝐘𝐨𝐮 𝐖𝐚𝐧𝐭 𝐓𝐨 𝐔𝐬𝐞 𝐎𝐮𝐫 𝐁𝐨𝐭, 𝐘𝐨𝐮 𝐌𝐮𝐬𝐭 𝐁𝐞 𝐀 𝐌𝐞𝐦𝐛𝐞𝐫 𝐎𝐟 𝐓হের 𝐆𝐫𝐨𝐮𝐩. 𝐅𝐨র 𝐉𝐨𝐢𝐧𝐢𝐧𝐠 ${currentPrefix}start `;
 
                         return botInstance.sendMessage(msg.chat.id, warningText);
 
@@ -762,46 +761,41 @@ async function startBots(botConfigs) {
 
     const adminInfo = `
 
-╭────────────────────────────── ADMIN INFO ───────────────────────────────╮
-
-  │                                                                         │
-
-  │    Facebook: ${global.CONFIG.BOT_SETTINGS.ADMIN_FACEBOOK_URL || "N/A"}    │
-
-  │                       WhatsApp: ${global.CONFIG.BOT_SETTINGS.ADMIN_WHATSAPP || "N/A"}                    │
-
-  │                     Credit: ${global.CONFIG.BOT_SETTINGS.CREDIT || "Developed by Mohammad Nayan"}                 │
-
-  │       Notification: This bot is protected and monitored by the admin.   │
-
-  │                             Version : ${global.CONFIG.BOT_SETTINGS.VERSION || "2.0.1.9"}                          │
-
-  │                                                                         │
-
-  ╰─────────────────────────────────────────────────────────────────────────╯
-
+╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  👑 𝐀𝐃𝐌𝐈𝐍 𝐈𝐍𝐅𝐎        ┃
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  👤 𝐍𝐀𝐌𝐄     : ${global.CONFIG.BOT_SETTINGS.CREDIT || "LIKHON AHMED"}
+┃
+┃  🔰 𝐔𝐒𝐄𝐑𝐍𝐀𝐌𝐄 : ${global.CONFIG.OWNER.USERNAME || "LIKHONAHMED009"}
+┃
+┃  🆔 𝐈𝐃      : ${global.CONFIG.OWNER.ID || "8287206585"}
+┃━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  🌐 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊     : ${global.CONFIG.BOT_SETTINGS.ADMIN_FACEBOOK_URL || "N/A"}
+┃
+┃  💬 𝐖𝐇𝐀𝐓𝐒𝐀𝐏𝐏     : ${global.CONFIG.BOT_SETTINGS.ADMIN_WHATSAPP || "N/A"}
+┃
+┃  🔔 𝐍𝐎𝐓𝐈𝐅𝐈𝐂𝐀𝐓𝐈𝐎𝐍 : This bot is protected and monitored by the admin.
+┃
+┃  📍 𝐕𝐄𝐑𝐒𝐈𝐎𝐍  : ${global.CONFIG.BOT_SETTINGS.VERSION || "2.0.1.9"}
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯
   `;
 
     const botInfo = `
 
-╭──────────────── BOT INFO ─────────────────╮
-
-   │                                           │
-
-   │      Login: Successfully Login Done (${global.BOT_INSTANCES.length} bots active) │
-
-   │       Main Bot User Name: @${botUsername}   │
-
-   │         Main Bot Name: ${botName}      │
-
-   │            Main Bot User ID: ${botId}        │
-
-   │                                           │
-
-   ╰───────────────────────────────────────────╯
-
+╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  🤖 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎          ┃
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  📛 𝐁𝐎𝐓 𝐍𝐀𝐌𝐄    : ${botName}
+┃
+┃  👤 𝐁𝐎𝐓 𝐔𝐒𝐄𝐑𝐍𝐀𝐌𝐄 : @${botUsername}
+┃
+┃  🆔 𝐁𝐎𝐓 𝐔𝐒𝐄𝐑𝐈𝐃  : ${botId}
+┃━━━━━━━━━━━━━━━━━━━━━━━━━━┃
+┃  ⚙️ 𝐒𝐓𝐀𝐓𝐔𝐒       : 𝐀𝐂𝐓𝐈𝐕𝐄
+┃
+┃  ⏱️ 𝐔𝐏𝐓𝐈𝐌𝐄       : 𝟐𝟒/𝟕
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯
   `;
-
     console.log(adminInfo);
 
     console.log(botInfo);
@@ -814,11 +808,23 @@ async function startBots(botConfigs) {
 
     app.listen(port, () => {
 
-        console.log(` Bot server running via polling on port ${port}`);
+        console.log(`╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  
+┃ 🚦  𝐒𝐄𝐑𝐕𝐄𝐑 𝐑𝐔𝐍𝐍𝐈𝐍𝐆 𝐎𝐍 𝐏𝐎𝐑𝐓 : ${port}
+┃
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯`);
 
-        console.log(` Command Prefix locked to: "${finalPrefix}"`);
+        console.log(`╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  
+┃  ☃️ 𝐁𝐎𝐓 𝐏𝐑𝐄𝐅𝐈𝐗  : "${finalPrefix}"
+┃
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯`);
 
-        console.log(` Non-Prefix Mode: ${noprefixStatus}`);
+        console.log(`╭─━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+┃  
+┃  🌚 𝐍𝐎-𝐏𝐑𝐄𝐅𝐈𝐗 𝐌𝐎𝐎𝐃 : ${noprefixStatus}
+┃
+╰─━━━━━━━━━━━━━━━━━━━━━━━━━━╯`);
 
     });
 
